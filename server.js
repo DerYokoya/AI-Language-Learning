@@ -11,3 +11,12 @@ app.use("/api/ai", aiRoutes);
 app.listen(3000, () => console.log("Server running on port 3000"));
 
 app.use(express.static("public"));
+
+app.get("/index", (req, res) => {
+  res.sendFile(__dirname + "/public/index.html");
+});
+
+// Redirect so it shows index instead of index.html
+app.get("/index.html", (req, res) => {
+  res.redirect("/index");
+});

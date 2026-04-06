@@ -1,21 +1,44 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>AI Language Learning Assistant</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>AI Language Learning Assistant</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-wrapper">
+      <header>
+        <div class="logo-container">
+          <img src="logo.svg" alt="LL Logo" class="logo" />
+        </div>
+        <br />
+      </header>
+      <div class="chat-container">
+        <div id="chat-window"></div>
 
-  <div class="chat-container">
-    <div id="chat-window"></div>
+        <div class="input-area">
+          <select id="language-select">
+            <option value="Spanish">Spanish</option>
+            <option value="French">French</option>
+            <option value="German">German</option>
+            <option value="Italian">Italian</option>
+            <option value="Japanese">Japanese</option>
+            <option value="Korean">Korean</option>
+            <option value="Mandarin Chinese">Mandarin Chinese</option>
+          </select>
 
-    <div class="input-area">
-      <input id="user-input" type="text" placeholder="Type your message...">
-      <button id="send-btn">Send</button>
+          <input
+            id="user-input"
+            type="text"
+            placeholder="Type your message..."
+          />
+          <button id="send-btn">Send</button>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <script src="script.js"></script>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>
