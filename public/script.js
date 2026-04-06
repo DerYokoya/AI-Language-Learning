@@ -17,9 +17,14 @@ async function sendMessage() {
 
   const targetLanguage = languageSelect.value;
 
+  // Add the user's message immediately
   addMessage(text, "user");
   userInput.value = "";
 
+  // Show typing indicator
+  showTyping();
+
+  // Send request to backend
   const response = await fetch("/api/ai/ask", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -29,6 +34,10 @@ async function sendMessage() {
     })
   });
 
+  // Remove typing indicator
+  hideTyping();
+
+  // Add AI message
   const data = await response.json();
   addMessage(data.reply, "ai");
 }
@@ -37,3 +46,24 @@ sendBtn.addEventListener("click", sendMessage);
 userInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") sendMessage();
 });
+
+function showTyping() {
+  const typing = document.createElement("div");
+  typing.classList.add("typing");
+  typing.id = "typing-indicator";
+
+  typing.innerHTML = `
+    <div class="typing-dot"></div>
+    <div class="typing-dot"></div>
+    <div class="typing-dot"></div>
+  `;
+
+  chatWindow.appendChild(typing);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function hideTyping() {
+  const typing = document.getElementById("typing-indicator");
+  if (typing) typing.remove();
+}
+
