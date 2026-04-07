@@ -6,18 +6,23 @@ const micBtn = document.getElementById("mic-btn");
 const listenBtn = document.getElementById("listen-practice-btn");
 
 const langMap = {
-  "Spanish": "es-ES",
-  "French": "fr-FR",
-  "German": "de-DE",
-  "Italian": "it-IT",
-  "Japanese": "ja-JP",
-  "Korean": "ko-KR",
+  Spanish: "es-ES",
+  French: "fr-FR",
+  German: "de-DE",
+  Italian: "it-IT",
+  Japanese: "ja-JP",
+  Korean: "ko-KR",
   "Mandarin Chinese": "zh-CN",
-  "English": "en-US"
+  English: "en-US",
 };
 
 // ---------- MESSAGE BUBBLES ----------
 function addMessage(text, sender) {
+  if (!text) {
+    console.warn("⚠ addMessage called with empty text");
+    return;
+  }
+
   const msg = document.createElement("div");
   msg.classList.add("message", sender);
   msg.innerHTML = marked.parse(text);
@@ -66,7 +71,7 @@ if ("webkitSpeechRecognition" in window) {
   recognition.onend = () => console.log("🛑 Voice recognition ended");
   recognition.onerror = (e) => console.log("❌ Speech error:", e.error);
 
-  recognition.onresult = function(event) {
+  recognition.onresult = function (event) {
     const transcript = event.results[0][0].transcript;
     userInput.value = transcript;
     micBtn.classList.remove("recording");
@@ -75,31 +80,45 @@ if ("webkitSpeechRecognition" in window) {
 
 // ---------- SEND MESSAGE ----------
 async function sendMessage() {
-  const text = userInput.value.trim();
-  if (!text) return;
+  const text = userInput.value.trim();       // read from input
+  const targetLanguage = languageSelect.value; // read from select
 
-  const targetLanguage = languageSelect.value;
+  if (!text) return;
 
   addMessage(text, "user");
   userInput.value = "";
-
   showTyping();
 
-  const response = await fetch("/api/ai/ask", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      prompt: text,
-      targetLanguage: targetLanguage
-    })
-  });
+  try {
+    const response = await fetch("/api/ai/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt: text,
+        targetLanguage: targetLanguage,
+      }),
+    });
 
-  hideTyping();
+    hideTyping();
 
-  const data = await response.json();
-  addMessage(data.reply, "ai");
+    if (!response.ok) {
+      addMessage("⚠️ Server error. Please try again.", "ai");
+      return;
+    }
 
-  speak(data.reply, langMap[targetLanguage]);
+    const data = await response.json();
+
+    if (!data.reply) {
+      addMessage("⚠️ AI returned an empty response.", "ai");
+      return;
+    }
+
+    addMessage(data.reply, "ai");
+    speak(data.reply, langMap[targetLanguage]);
+  } catch (err) {
+    hideTyping();
+    addMessage("⚠️ Network error. Check your server.", "ai");
+  }
 }
 
 sendBtn.addEventListener("click", sendMessage);
@@ -109,7 +128,8 @@ userInput.addEventListener("keypress", (e) => {
 
 // ---------- MIC BUTTON ----------
 micBtn.addEventListener("click", () => {
-  if (!recognition) return alert("Speech recognition not supported in this browser");
+  if (!recognition)
+    return alert("Speech recognition not supported in this browser");
 
   const targetLanguage = languageSelect.value;
   recognition.lang = langMap[targetLanguage] || "en-US";
@@ -117,7 +137,6 @@ micBtn.addEventListener("click", () => {
   micBtn.classList.add("recording");
   recognition.start();
 });
-
 
 // ---------- LISTENING PRACTICE ----------
 listenBtn.addEventListener("click", async () => {
@@ -129,8 +148,8 @@ listenBtn.addEventListener("click", async () => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       prompt: "Give me a short sentence for listening practice.",
-      targetLanguage
-    })
+      targetLanguage,
+    }),
   });
   hideTyping();
 
@@ -148,7 +167,7 @@ listenBtn.addEventListener("click", async () => {
   micBtn.classList.add("recording");
   recognition.start();
 
-  recognition.onresult = async function(event) {
+  recognition.onresult = async function (event) {
     micBtn.classList.remove("recording");
     const attempt = event.results[0][0].transcript;
 
@@ -160,8 +179,8 @@ listenBtn.addEventListener("click", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         prompt: `Evaluate my pronunciation of this sentence: "${sentence}". My attempt: "${attempt}".`,
-        targetLanguage
-      })
+        targetLanguage,
+      }),
     });
     hideTyping();
 

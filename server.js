@@ -8,8 +8,6 @@ app.use(express.json());
 
 app.use("/api/ai", aiRoutes);
 
-app.listen(3000, () => console.log("Server running on port 3000"));
-
 app.use(express.static("public"));
 
 app.get("/index", (req, res) => {
@@ -20,3 +18,5 @@ app.get("/index", (req, res) => {
 app.get("/index.html", (req, res) => {
   res.redirect("/index");
 });
+
+app.listen(3000, () => console.log("Server running on port 3000"));

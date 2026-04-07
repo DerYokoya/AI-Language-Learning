@@ -2,6 +2,8 @@ const model = require("../services/gemini");
 
 exports.askAI = async (req, res) => {
   try {
+    console.log("Received request:", req.body);
+
     const { prompt, targetLanguage } = req.body;
 
     const fullPrompt = `
@@ -16,15 +18,19 @@ exports.askAI = async (req, res) => {
       contents: [
         {
           role: "user",
-          parts: [{ text: fullPrompt }]
-        }
-      ]
+          parts: [{ text: fullPrompt }],
+        },
+      ],
     });
 
-    res.json({ reply: result.response.text() });
+    const reply = result.response.text();
+
+    console.log("AI reply:", reply);
+
+    res.json({ reply });
 
   } catch (err) {
-    console.error(err);
+    console.error("AI ERROR:", err);
     res.status(500).json({ error: "AI request failed" });
   }
 };
