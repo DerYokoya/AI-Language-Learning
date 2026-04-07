@@ -170,3 +170,28 @@ body {
   border-radius: 8px;
   cursor: pointer;
 }
+
+/* TTS Toggle Button */
+#tts-toggle-btn {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+#tts-toggle-btn:hover {
+  background: #45a049;
+}
+
+#tts-toggle-btn:active {
+  transform: scale(0.96);
+}
+
+/* OFF state */
+#tts-toggle-btn.tts-off {
+  background: #888;
+}

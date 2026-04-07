@@ -4,6 +4,7 @@ const sendBtn = document.getElementById("send-btn");
 const languageSelect = document.getElementById("language-select");
 const micBtn = document.getElementById("mic-btn");
 const listenBtn = document.getElementById("listen-practice-btn");
+const ttsToggleBtn = document.getElementById("tts-toggle-btn");
 
 const langMap = {
   Spanish: "es-ES",
@@ -15,6 +16,31 @@ const langMap = {
   "Mandarin Chinese": "zh-CN",
   English: "en-US",
 };
+
+// ---------- TTS TOGGLE ----------
+let autoReadEnabled = true;
+
+ttsToggleBtn.addEventListener("click", () => {
+  autoReadEnabled = !autoReadEnabled;
+  ttsToggleBtn.textContent = autoReadEnabled ? "🔊 Auto-Read: ON" : "🔇 Auto-Read: OFF";
+  ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
+});
+
+// ---------- STRIP MARKDOWN FOR SPEECH ----------
+function stripMarkdown(text) {
+  return text
+    .replace(/#{1,6}\s*/g, "")           // headings (#, ##, etc.)
+    .replace(/\*\*(.+?)\*\*/g, "$1")     // bold
+    .replace(/\*(.+?)\*/g, "$1")         // italic
+    .replace(/`{1,3}[^`]*`{1,3}/g, "")  // inline code / code blocks
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1") // links → keep label
+    .replace(/^\s*[-*+]\s+/gm, "")      // bullet points
+    .replace(/^\s*\d+\.\s+/gm, "")      // numbered lists
+    .replace(/_{1,2}(.+?)_{1,2}/g, "$1") // underscores
+    .replace(/\n{2,}/g, ". ")           // paragraph breaks → natural pause
+    .replace(/\n/g, " ")                // remaining newlines
+    .trim();
+}
 
 // ---------- MESSAGE BUBBLES ----------
 function addMessage(text, sender) {
@@ -53,7 +79,9 @@ function hideTyping() {
 
 // ---------- TEXT TO SPEECH ----------
 function speak(text, lang) {
-  const utter = new SpeechSynthesisUtterance(text);
+  if (!autoReadEnabled) return;
+  const clean = stripMarkdown(text);
+  const utter = new SpeechSynthesisUtterance(clean);
   utter.lang = lang;
   utter.rate = 1;
   utter.pitch = 1;
@@ -80,8 +108,8 @@ if ("webkitSpeechRecognition" in window) {
 
 // ---------- SEND MESSAGE ----------
 async function sendMessage() {
-  const text = userInput.value.trim();       // read from input
-  const targetLanguage = languageSelect.value; // read from select
+  const text = userInput.value.trim();
+  const targetLanguage = languageSelect.value;
 
   if (!text) return;
 
@@ -93,10 +121,7 @@ async function sendMessage() {
     const response = await fetch("/api/ai/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt: text,
-        targetLanguage: targetLanguage,
-      }),
+      body: JSON.stringify({ prompt: text, targetLanguage }),
     });
 
     hideTyping();
@@ -118,6 +143,7 @@ async function sendMessage() {
   } catch (err) {
     hideTyping();
     addMessage("⚠️ Network error. Check your server.", "ai");
+    console.error(err);
   }
 }
 
@@ -159,7 +185,11 @@ listenBtn.addEventListener("click", async () => {
   addMessage(sentence, "ai");
 
   const langCode = langMap[targetLanguage] || "en-US";
-  speak(sentence, langCode);
+  // Always speak during listening practice, regardless of toggle
+  const cleanSentence = stripMarkdown(sentence);
+  const utter = new SpeechSynthesisUtterance(cleanSentence);
+  utter.lang = langCode;
+  speechSynthesis.speak(utter);
 
   addMessage("Now repeat the sentence aloud.", "ai");
 
@@ -186,5 +216,6 @@ listenBtn.addEventListener("click", async () => {
 
     const evalData = await evalResponse.json();
     addMessage(evalData.reply, "ai");
+    speak(evalData.reply, langCode);
   };
 });
