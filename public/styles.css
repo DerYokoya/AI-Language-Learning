@@ -146,3 +146,27 @@ body {
   align-items: center;
   width: 100%;
 }
+
+#mic-btn {
+  padding: 10px 14px;
+  border: none;
+  background: #f0f0f0;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+#mic-btn.recording {
+  background: #ff4d4d;
+  color: white;
+}
+
+#listen-practice-btn {
+  margin-bottom: 10px;
+  padding: 8px 14px;
+  border: none;
+  background: #0078ff;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
