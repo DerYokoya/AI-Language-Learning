@@ -24,6 +24,12 @@ ttsToggleBtn.addEventListener("click", () => {
   autoReadEnabled = !autoReadEnabled;
   ttsToggleBtn.textContent = autoReadEnabled ? "🔊 Auto-Read: ON" : "🔇 Auto-Read: OFF";
   ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
+
+  if (autoReadEnabled) {
+    addMessage("🔊 Text-to-Speech active. I'll speak my responses.", "ai");
+  } else {
+    addMessage("🔇 TTS turned off.", "ai");
+  }
 });
 
 // ---------- STRIP MARKDOWN FOR SPEECH ----------
