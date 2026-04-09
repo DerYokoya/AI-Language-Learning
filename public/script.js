@@ -6,6 +6,24 @@ const micBtn = document.getElementById("mic-btn");
 const listenBtn = document.getElementById("listen-practice-btn");
 const ttsToggleBtn = document.getElementById("tts-toggle-btn");
 
+speechSynthesis.onvoiceschanged = () => {
+  console.log("Voices loaded:", speechSynthesis.getVoices());
+};
+
+function waitForVoices() {
+  return new Promise(resolve => {
+    let voices = speechSynthesis.getVoices();
+    if (voices.length) {
+      resolve(voices);
+      return;
+    }
+    speechSynthesis.onvoiceschanged = () => {
+      voices = speechSynthesis.getVoices();
+      resolve(voices);
+    };
+  });
+}
+
 const langMap = {
   Spanish: "es-ES",
   French: "fr-FR",
@@ -37,17 +55,19 @@ ttsToggleBtn.addEventListener("click", () => {
 // ---------- STRIP MARKDOWN FOR SPEECH ----------
 function stripMarkdown(text) {
   return text
-    .replace(/```[\s\S]*?```/g, "")        // code blocks
-    .replace(/`[^`]*`/g, "")               // inline code
-    .replace(/#{1,6}\s*/g, "")             // headings
-    .replace(/^\s*[-*+]\s+/gm, "")         // bullets
-    .replace(/^>\s+/gm, "")                // blockquotes
-    .replace(/\*\*(.*?)\*\*/g, "$1")       // bold
-    .replace(/\*(.*?)\*/g, "$1")           // italic
-    .replace(/_{1,2}(.*?)_{1,2}/g, "$1")   // underscores
-    .replace(/\[(.*?)\]\(.*?\)/g, "$1")    // links
-    .replace(/\n{2,}/g, ". ")              // paragraph → pause
-    .replace(/\n/g, " ")                   // newlines
+    .replace(/```[\s\S]*?```/g, "") // code blocks
+    .replace(/`[^`]*`/g, "") // inline code
+    .replace(/#{1,6}\s*/g, "") // headings
+    .replace(/^\s*[-*+]\s+/gm, "") // bullets
+    .replace(/^>\s+/gm, "") // blockquotes
+    .replace(/\*\*(.*?)\*\*/g, "$1") // bold
+    .replace(/\*(.*?)\*/g, "$1") // italic
+    .replace(/_{1,2}(.*?)_{1,2}/g, "$1") // underscores
+    .replace(/\[(.*?)\]\(.*?\)/g, "$1") // links
+    .replace(/\n{2,}/g, ". ") // paragraph → pause
+    .replace(/\n/g, " ") // newlines
+    .replace(/#(\w+)/g, "$1") // remove inline hashtags
+    .replace(/[!?]/g, ".") // replace with a soft stop
     .trim();
 }
 
@@ -87,16 +107,27 @@ function hideTyping() {
 }
 
 // ---------- TEXT TO SPEECH ----------
-function speak(text, lang) {
+async function speak(text, langCode) {
   if (!autoReadEnabled) return;
+
+  await waitForVoices(); // <-- ensures voices are loaded
 
   const clean = stripMarkdown(text);
   const utter = new SpeechSynthesisUtterance(clean);
 
-  utter.lang = lang;
+  utter.lang = langCode;
 
-  const voice = getVoiceForLang(lang);
-  if (voice) utter.voice = voice;
+  const voice = getVoiceForLang(langCode);
+
+  if (!voice) {
+    addMessage(
+      `⚠️ No voice installed for ${langCode}.  
+      Please install a voice for this language in your system settings.`,
+      "ai"
+    );
+  } else {
+    utter.voice = voice;
+  }
 
   utter.rate = 1;
   utter.pitch = 1;
@@ -104,6 +135,19 @@ function speak(text, lang) {
   speechSynthesis.speak(utter);
 }
 
+function waitForVoices() {
+  return new Promise(resolve => {
+    let voices = speechSynthesis.getVoices();
+    if (voices.length) {
+      resolve(voices);
+      return;
+    }
+    speechSynthesis.onvoiceschanged = () => {
+      voices = speechSynthesis.getVoices();
+      resolve(voices);
+    };
+  });
+}
 
 // ---------- SPEECH RECOGNITION SETUP ----------
 let recognition;
@@ -248,7 +292,16 @@ ttsStopBtn.addEventListener("click", () => {
   speechSynthesis.cancel(); // <-- kills ALL ongoing speech instantly
 });
 
+let cachedVoices = [];
+speechSynthesis.onvoiceschanged = () => {
+  cachedVoices = speechSynthesis.getVoices();
+  console.log("Voices loaded:", cachedVoices);
+};
+
 function getVoiceForLang(langCode) {
-  const voices = speechSynthesis.getVoices();
-  return voices.find((v) => v.lang === langCode) || null;
+  const voices = cachedVoices.length ? cachedVoices : speechSynthesis.getVoices();
+  const exact = voices.find((v) => v.lang === langCode);
+  if (exact) return exact;
+  const prefix = langCode.split("-")[0];
+  return voices.find((v) => v.lang.startsWith(prefix)) || null;
 }
