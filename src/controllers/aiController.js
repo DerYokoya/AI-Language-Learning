@@ -1,4 +1,4 @@
-const model = require("../services/gemini");
+const client = require("../services/openrouter");
 
 exports.askAI = async (req, res) => {
   try {
@@ -7,28 +7,26 @@ exports.askAI = async (req, res) => {
     const { prompt, targetLanguage } = req.body;
 
     const fullPrompt = `
-      System: You are a friendly language-learning tutor. 
-      Help the user learn ${targetLanguage}. 
+      System: You are a friendly language-learning tutor.
+      Help the user learn ${targetLanguage}.
       Explain clearly, correct mistakes gently, and give examples.
 
       User: ${prompt}
     `;
 
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: fullPrompt }],
-        },
+    const completion = await client.chat.completions.create({
+      model: "openai/gpt-oss-120b:free",
+      messages: [
+        { role: "system", content: "You are a helpful language tutor." },
+        { role: "user", content: fullPrompt },
       ],
     });
 
-    const reply = result.response.text();
+    const reply = completion.choices[0].message.content;
 
     console.log("AI reply:", reply);
 
     res.json({ reply });
-
   } catch (err) {
     console.error("AI ERROR:", err);
     res.status(500).json({ error: "AI request failed" });

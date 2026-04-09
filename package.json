@@ -8,9 +8,9 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
     "dotenv": "^17.4.1",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "openai": "^4.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
