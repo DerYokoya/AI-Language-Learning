@@ -22,7 +22,9 @@ let autoReadEnabled = true;
 
 ttsToggleBtn.addEventListener("click", () => {
   autoReadEnabled = !autoReadEnabled;
-  ttsToggleBtn.textContent = autoReadEnabled ? "🔊 Auto-Read: ON" : "🔇 Auto-Read: OFF";
+  ttsToggleBtn.textContent = autoReadEnabled
+    ? "🔊 Auto-Read: ON"
+    : "🔇 Auto-Read: OFF";
   ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
 
   if (autoReadEnabled) {
@@ -35,16 +37,17 @@ ttsToggleBtn.addEventListener("click", () => {
 // ---------- STRIP MARKDOWN FOR SPEECH ----------
 function stripMarkdown(text) {
   return text
-    .replace(/#{1,6}\s*/g, "")           // headings (#, ##, etc.)
-    .replace(/\*\*(.+?)\*\*/g, "$1")     // bold
-    .replace(/\*(.+?)\*/g, "$1")         // italic
-    .replace(/`{1,3}[^`]*`{1,3}/g, "")  // inline code / code blocks
-    .replace(/\[(.+?)\]\(.+?\)/g, "$1") // links → keep label
-    .replace(/^\s*[-*+]\s+/gm, "")      // bullet points
-    .replace(/^\s*\d+\.\s+/gm, "")      // numbered lists
-    .replace(/_{1,2}(.+?)_{1,2}/g, "$1") // underscores
-    .replace(/\n{2,}/g, ". ")           // paragraph breaks → natural pause
-    .replace(/\n/g, " ")                // remaining newlines
+    .replace(/```[\s\S]*?```/g, "")        // code blocks
+    .replace(/`[^`]*`/g, "")               // inline code
+    .replace(/#{1,6}\s*/g, "")             // headings
+    .replace(/^\s*[-*+]\s+/gm, "")         // bullets
+    .replace(/^>\s+/gm, "")                // blockquotes
+    .replace(/\*\*(.*?)\*\*/g, "$1")       // bold
+    .replace(/\*(.*?)\*/g, "$1")           // italic
+    .replace(/_{1,2}(.*?)_{1,2}/g, "$1")   // underscores
+    .replace(/\[(.*?)\]\(.*?\)/g, "$1")    // links
+    .replace(/\n{2,}/g, ". ")              // paragraph → pause
+    .replace(/\n/g, " ")                   // newlines
     .trim();
 }
 
@@ -86,13 +89,21 @@ function hideTyping() {
 // ---------- TEXT TO SPEECH ----------
 function speak(text, lang) {
   if (!autoReadEnabled) return;
+
   const clean = stripMarkdown(text);
   const utter = new SpeechSynthesisUtterance(clean);
+
   utter.lang = lang;
+
+  const voice = getVoiceForLang(lang);
+  if (voice) utter.voice = voice;
+
   utter.rate = 1;
   utter.pitch = 1;
+
   speechSynthesis.speak(utter);
 }
+
 
 // ---------- SPEECH RECOGNITION SETUP ----------
 let recognition;
@@ -191,7 +202,12 @@ listenBtn.addEventListener("click", async () => {
   addMessage(sentence, "ai");
 
   const langCode = langMap[targetLanguage] || "en-US";
-  // Always speak during listening practice, regardless of toggle
+  if (autoReadEnabled) {
+    const cleanSentence = stripMarkdown(sentence);
+    const utter = new SpeechSynthesisUtterance(cleanSentence);
+    utter.lang = langCode;
+    speechSynthesis.speak(utter);
+  }
   const cleanSentence = stripMarkdown(sentence);
   const utter = new SpeechSynthesisUtterance(cleanSentence);
   utter.lang = langCode;
@@ -225,3 +241,14 @@ listenBtn.addEventListener("click", async () => {
     speak(evalData.reply, langCode);
   };
 });
+
+const ttsStopBtn = document.getElementById("tts-stop-btn");
+
+ttsStopBtn.addEventListener("click", () => {
+  speechSynthesis.cancel(); // <-- kills ALL ongoing speech instantly
+});
+
+function getVoiceForLang(langCode) {
+  const voices = speechSynthesis.getVoices();
+  return voices.find((v) => v.lang === langCode) || null;
+}

@@ -9,7 +9,8 @@ body {
 }
 
 .chat-container {
-  width: 600px;
+  width: 80%;        /* takes 80% of the screen */
+  max-width: 900px;  /* but never exceeds 900px */
   height: 600px;
   background: white;
   border-radius: 12px;
@@ -170,6 +171,17 @@ body {
   color: white;
   border-radius: 8px;
   cursor: pointer;
+}
+
+#tts-stop-btn {
+  background: #ffabab;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s ease, transform 0.1s ease;
 }
 
 /* TTS Toggle Button */
