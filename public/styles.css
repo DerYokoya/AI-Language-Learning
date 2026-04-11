@@ -167,6 +167,7 @@ body {
   background: #f0f0f0;
   border-radius: 50%;
   cursor: pointer;
+  margin-right: 10px;
   font-size: 18px;
 }
 
@@ -193,6 +194,7 @@ body {
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
+  margin-right: 10px;
   transition:
     background 0.2s ease,
     transform 0.1s ease;
@@ -207,6 +209,7 @@ body {
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
+  margin-right: 10px;
   transition:
     background 0.2s ease,
     transform 0.1s ease;
@@ -233,4 +236,61 @@ body {
   background: white;
   cursor: pointer;
   margin-right: 10px;
+}
+
+#theme-toggle-btn {
+  margin-bottom: 10px;
+  padding: 8px 14px;
+  border: none;
+  background: #000a53;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* DARK MODE */
+
+body.dark {
+  background: #1e1e1e;
+}
+
+body.dark .chat-container {
+  background: #2a2a2a;
+  color: #f1f1f1;
+}
+
+body.dark #chat-window {
+  background: #2a2a2a;
+}
+
+body.dark .message.user {
+  background: #4a4a4a;
+  color: white;
+}
+
+body.dark .message.ai {
+  background: #3a3a3a;
+  color: white;
+}
+
+body.dark input,
+body.dark select {
+  background: #3a3a3a;
+  color: white;
+  border: 1px solid #555;
+}
+
+body.dark button {
+  background: #444;
+  color: white;
+}
+
+body.dark #tts-toggle-btn.tts-off {
+  background: #666;
+}
+
+body.dark #difficulty-select {
+  background: #2f2f2f;
+  color: #f5f5f5;
+  border-color: #777;
 }

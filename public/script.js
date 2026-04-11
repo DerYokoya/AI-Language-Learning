@@ -1,11 +1,22 @@
 const chatWindow = document.getElementById("chat-window");
 const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
+
 const languageSelect = document.getElementById("language-select");
 const micBtn = document.getElementById("mic-btn");
 const listenBtn = document.getElementById("listen-practice-btn");
+
 const ttsToggleBtn = document.getElementById("tts-toggle-btn");
 const difficultySelect = document.getElementById("difficulty-select");
+
+const themeToggleBtn = document.getElementById("theme-toggle-btn");
+
+themeToggleBtn.addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+
+  const dark = document.body.classList.contains("dark");
+  themeToggleBtn.textContent = dark ? "☀️ Light Mode" : "🌙 Dark Mode";
+});
 
 speechSynthesis.onvoiceschanged = () => {
   console.log("Voices loaded:", speechSynthesis.getVoices());
