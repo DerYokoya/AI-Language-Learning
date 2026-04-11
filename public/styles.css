@@ -207,7 +207,7 @@ body,
 }
 
 #tts-stop-btn {
-  background: #ffabab;
+  background: #b10000;
   color: white;
 }
 #tts-toggle-btn {
@@ -261,4 +261,39 @@ body.dark #tts-toggle-btn.tts-off {
 body.dark #difficulty-select {
   background: #2f2f2f;
   border-color: #777;
+}
+body.dark #language-select {
+  background: #2f2f2f;
+  color: white;
+  border-color: #777;
+}
+.message table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.message th, .message td {
+  border: 1px solid #ccc;
+  padding: 8px;
+}
+
+.message th {
+  background: #f0f0f0;
+  font-weight: bold;
+}
+
+#tts-replay-btn {
+  background: #6a5acd;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 10px;
+}
+
+#tts-replay-btn:hover {
+  background: #5a4ac0;
 }

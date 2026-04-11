@@ -7,9 +7,27 @@ const micBtn = document.getElementById("mic-btn");
 const listenBtn = document.getElementById("listen-practice-btn");
 
 const ttsToggleBtn = document.getElementById("tts-toggle-btn");
+const ttsReplayBtn = document.getElementById("tts-replay-btn");
 const difficultySelect = document.getElementById("difficulty-select");
 
 const themeToggleBtn = document.getElementById("theme-toggle-btn");
+
+let lastAIMessage = "";
+
+ttsReplayBtn.addEventListener("click", () => {
+  if (!lastAIMessage) {
+    addMessage("⚠️ No AI message to replay yet.", "ai");
+    return;
+  }
+
+  const targetLanguage = languageSelect.value;
+  const langCode = langMap[targetLanguage] || "en-US";
+
+  const clean = stripMarkdown(lastAIMessage);
+  const utter = new SpeechSynthesisUtterance(clean);
+  utter.lang = langCode;
+  speechSynthesis.speak(utter);
+});
 
 themeToggleBtn.addEventListener("click", () => {
   document.body.classList.toggle("dark");
@@ -216,6 +234,7 @@ async function sendMessage() {
       return;
     }
 
+    lastAIMessage = data.reply;
     addMessage(data.reply, "ai");
     speak(data.reply, langMap[targetLanguage]);
   } catch (err) {
@@ -261,6 +280,7 @@ listenBtn.addEventListener("click", async () => {
 
   const data = await response.json();
   const sentence = data.reply;
+  lastAIMessage = sentence;
 
   addMessage(sentence, "ai");
 
@@ -271,10 +291,6 @@ listenBtn.addEventListener("click", async () => {
     utter.lang = langCode;
     speechSynthesis.speak(utter);
   }
-  const cleanSentence = stripMarkdown(sentence);
-  const utter = new SpeechSynthesisUtterance(cleanSentence);
-  utter.lang = langCode;
-  speechSynthesis.speak(utter);
 
   addMessage("Now repeat the sentence aloud.", "ai");
 
@@ -300,6 +316,7 @@ listenBtn.addEventListener("click", async () => {
     hideTyping();
 
     const evalData = await evalResponse.json();
+    lastAIMessage = evalData.reply;
     addMessage(evalData.reply, "ai");
     speak(evalData.reply, langCode);
   };
