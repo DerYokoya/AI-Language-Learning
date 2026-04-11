@@ -9,8 +9,8 @@ body {
 }
 
 .chat-container {
-  width: 80%;        /* takes 80% of the screen */
-  max-width: 900px;  /* but never exceeds 900px */
+  width: 80%; /* takes 80% of the screen */
+  max-width: 1200px; /* but never exceeds 1200px */
   height: 600px;
   background: white;
   border-radius: 12px;
@@ -47,7 +47,7 @@ body {
   color: white;
   align-self: flex-end;
   border-bottom-right-radius: 4px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 /* AI bubble (left side) */
@@ -56,13 +56,19 @@ body {
   color: #222;
   align-self: flex-start;
   border-bottom-left-radius: 4px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 /* Smooth fade-in animation */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .typing {
@@ -94,9 +100,15 @@ body {
 }
 
 @keyframes blink {
-  0% { opacity: 0.2; }
-  20% { opacity: 1; }
-  100% { opacity: 0.2; }
+  0% {
+    opacity: 0.2;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.2;
+  }
 }
 
 .input-area {
@@ -181,7 +193,9 @@ body {
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  transition: background 0.2s ease, transform 0.1s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease;
 }
 
 /* TTS Toggle Button */
@@ -193,7 +207,9 @@ body {
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  transition: background 0.2s ease, transform 0.1s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease;
 }
 
 #tts-toggle-btn:hover {
@@ -207,4 +223,14 @@ body {
 /* OFF state */
 #tts-toggle-btn.tts-off {
   background: #888;
+}
+
+#difficulty-select {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  margin-right: 10px;
 }

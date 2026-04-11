@@ -5,13 +5,14 @@ const languageSelect = document.getElementById("language-select");
 const micBtn = document.getElementById("mic-btn");
 const listenBtn = document.getElementById("listen-practice-btn");
 const ttsToggleBtn = document.getElementById("tts-toggle-btn");
+const difficultySelect = document.getElementById("difficulty-select");
 
 speechSynthesis.onvoiceschanged = () => {
   console.log("Voices loaded:", speechSynthesis.getVoices());
 };
 
 function waitForVoices() {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     let voices = speechSynthesis.getVoices();
     if (voices.length) {
       resolve(voices);
@@ -123,7 +124,7 @@ async function speak(text, langCode) {
     addMessage(
       `⚠️ No voice installed for ${langCode}.  
       Please install a voice for this language in your system settings.`,
-      "ai"
+      "ai",
     );
   } else {
     utter.voice = voice;
@@ -136,7 +137,7 @@ async function speak(text, langCode) {
 }
 
 function waitForVoices() {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     let voices = speechSynthesis.getVoices();
     if (voices.length) {
       resolve(voices);
@@ -171,6 +172,7 @@ if ("webkitSpeechRecognition" in window) {
 async function sendMessage() {
   const text = userInput.value.trim();
   const targetLanguage = languageSelect.value;
+  const difficulty = difficultySelect.value;
 
   if (!text) return;
 
@@ -182,7 +184,11 @@ async function sendMessage() {
     const response = await fetch("/api/ai/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: text, targetLanguage }),
+      body: JSON.stringify({
+        prompt: text,
+        targetLanguage,
+        difficulty,
+      }),
     });
 
     hideTyping();
@@ -228,6 +234,7 @@ micBtn.addEventListener("click", () => {
 // ---------- LISTENING PRACTICE ----------
 listenBtn.addEventListener("click", async () => {
   const targetLanguage = languageSelect.value;
+  const difficulty = difficultySelect.value;
 
   showTyping();
   const response = await fetch("/api/ai/ask", {
@@ -236,6 +243,7 @@ listenBtn.addEventListener("click", async () => {
     body: JSON.stringify({
       prompt: "Give me a short sentence for listening practice.",
       targetLanguage,
+      difficulty
     }),
   });
   hideTyping();
@@ -299,7 +307,9 @@ speechSynthesis.onvoiceschanged = () => {
 };
 
 function getVoiceForLang(langCode) {
-  const voices = cachedVoices.length ? cachedVoices : speechSynthesis.getVoices();
+  const voices = cachedVoices.length
+    ? cachedVoices
+    : speechSynthesis.getVoices();
   const exact = voices.find((v) => v.lang === langCode);
   if (exact) return exact;
   const prefix = langCode.split("-")[0];

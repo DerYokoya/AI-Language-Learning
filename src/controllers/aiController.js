@@ -4,12 +4,17 @@ exports.askAI = async (req, res) => {
   try {
     console.log("Received request:", req.body);
 
-    const { prompt, targetLanguage } = req.body;
+    const { prompt, targetLanguage, difficulty } = req.body;
 
     const fullPrompt = `
       System: You are a friendly language-learning tutor.
       Help the user learn ${targetLanguage}.
-      Explain clearly, correct mistakes gently, and give examples.
+      Adjust your explanations to the user's difficulty level: ${difficulty}.
+
+      Difficulty rules:
+      - Beginner: Use simple vocabulary, short sentences, slow progression.
+      - Intermediate: Use richer vocabulary, moderate complexity, examples.
+      - Advanced: Use natural, fluent, native-level expressions and deeper explanations.
 
       User: ${prompt}
     `;
