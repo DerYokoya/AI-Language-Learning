@@ -1,6 +1,5 @@
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
   background: #f5f5f5;
   display: flex;
   justify-content: center;
@@ -8,9 +7,15 @@ body {
   height: 100vh;
 }
 
+body,
+.message,
+.typing {
+  font-family: Arial, sans-serif;
+}
+
 .chat-container {
-  width: 80%; /* takes 80% of the screen */
-  max-width: 1200px; /* but never exceeds 1200px */
+  width: 80%;
+  max-width: 1200px;
   height: 600px;
   background: white;
   border-radius: 12px;
@@ -34,14 +39,16 @@ body {
   margin: 8px 0;
   border-radius: 18px;
   line-height: 1.5;
-  font-size: 15px;
-  display: inline-block;
-  word-wrap: break-word;
-  position: relative;
   animation: fadeIn 0.2s ease-in-out;
 }
 
-/* User bubble (right side) */
+.user,
+.ai,
+.typing {
+  word-wrap: break-word;
+  position: relative;
+}
+
 .user {
   background: #0078ff;
   color: white;
@@ -50,8 +57,8 @@ body {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
-/* AI bubble (left side) */
-.ai {
+.ai,
+.typing {
   background: #e6e6e6;
   color: #222;
   align-self: flex-start;
@@ -59,7 +66,6 @@ body {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
-/* Smooth fade-in animation */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -72,15 +78,12 @@ body {
 }
 
 .typing {
-  background: #e6e6e6;
-  color: #555;
-  align-self: flex-start;
-  border-radius: 18px;
   padding: 10px 14px;
   margin: 8px 0;
   display: flex;
   gap: 4px;
   width: fit-content;
+  border-radius: 18px;
 }
 
 .typing-dot {
@@ -94,41 +97,45 @@ body {
 .typing-dot:nth-child(2) {
   animation-delay: 0.2s;
 }
-
 .typing-dot:nth-child(3) {
   animation-delay: 0.4s;
 }
 
 @keyframes blink {
-  0% {
+  0%,
+  100% {
     opacity: 0.2;
   }
   20% {
     opacity: 1;
   }
-  100% {
-    opacity: 0.2;
-  }
 }
 
 .input-area {
   display: flex;
-  align-items: center; /* prevents vertical stretching */
+  align-items: center;
   padding: 12px;
   border-top: 1px solid #ddd;
   gap: 10px;
 }
 
-#user-input {
-  flex: 1;
-  padding: 10px;
+#user-input,
+#language-select,
+#difficulty-select {
+  padding: 8px;
   border-radius: 8px;
   border: 1px solid #ccc;
 }
 
-#send-btn {
-  margin-left: 10px;
-  padding: 10px 16px;
+#user-input {
+  flex: 1;
+  padding: 10px;
+}
+
+#send-btn,
+#listen-practice-btn,
+#theme-toggle-btn {
+  padding: 8px 14px;
   border: none;
   background: #0078ff;
   color: white;
@@ -136,11 +143,24 @@ body {
   cursor: pointer;
 }
 
-#language-select {
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+#theme-toggle-btn {
+  background: #000a53;
+  margin-bottom: 10px;
+}
+#listen-practice-btn {
+  margin-bottom: 10px;
+}
+
+#language-select,
+#difficulty-select {
   margin-right: 10px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#difficulty-select {
+  font-size: 14px;
 }
 
 .logo-container {
@@ -153,7 +173,6 @@ body {
   width: 120px;
   height: auto;
 }
-
 .app-wrapper {
   display: flex;
   flex-direction: column;
@@ -176,121 +195,70 @@ body {
   color: white;
 }
 
-#listen-practice-btn {
-  margin-bottom: 10px;
+#tts-stop-btn,
+#tts-toggle-btn {
   padding: 8px 14px;
   border: none;
-  background: #0078ff;
-  color: white;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 14px;
+  margin-right: 10px;
+  transition: all 0.2s ease;
 }
 
 #tts-stop-btn {
   background: #ffabab;
   color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  margin-right: 10px;
-  transition:
-    background 0.2s ease,
-    transform 0.1s ease;
 }
-
-/* TTS Toggle Button */
 #tts-toggle-btn {
   background: #4caf50;
   color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  margin-right: 10px;
-  transition:
-    background 0.2s ease,
-    transform 0.1s ease;
 }
-
-#tts-toggle-btn:hover {
-  background: #45a049;
-}
-
-#tts-toggle-btn:active {
-  transform: scale(0.96);
-}
-
-/* OFF state */
 #tts-toggle-btn.tts-off {
   background: #888;
 }
-
-#difficulty-select {
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-  background: white;
-  cursor: pointer;
-  margin-right: 10px;
+#tts-toggle-btn:hover {
+  background: #45a049;
+}
+#tts-toggle-btn:active,
+#tts-stop-btn:active {
+  transform: scale(0.96);
 }
 
-#theme-toggle-btn {
-  margin-bottom: 10px;
-  padding: 8px 14px;
-  border: none;
-  background: #000a53;
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-/* DARK MODE */
-
-body.dark {
-  background: #1e1e1e;
-}
-
-body.dark .chat-container {
-  background: #2a2a2a;
-  color: #f1f1f1;
-}
-
+/* Dark mode */
+body.dark,
+body.dark .chat-container,
 body.dark #chat-window {
   background: #2a2a2a;
 }
 
-body.dark .message.user {
-  background: #4a4a4a;
-  color: white;
+body.dark {
+  background: #1e1e1e;
+  color: #f1f1f1;
 }
 
-body.dark .message.ai {
+body.dark .user {
+  background: #4a4a4a;
+}
+body.dark .ai,
+body.dark .typing {
   background: #3a3a3a;
   color: white;
 }
-
 body.dark input,
 body.dark select {
   background: #3a3a3a;
   color: white;
-  border: 1px solid #555;
+  border-color: #555;
 }
-
 body.dark button {
   background: #444;
   color: white;
 }
-
 body.dark #tts-toggle-btn.tts-off {
   background: #666;
 }
-
 body.dark #difficulty-select {
   background: #2f2f2f;
-  color: #f5f5f5;
   border-color: #777;
 }
