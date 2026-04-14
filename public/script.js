@@ -16,7 +16,7 @@ let lastAIMessage = "";
 
 ttsReplayBtn.addEventListener("click", () => {
   if (!lastAIMessage) {
-    addMessage("⚠️ No AI message to replay yet.", "ai");
+    addMessage("⚠️ No AI message to replay yet.", "system-error");
     return;
   }
 
@@ -76,9 +76,12 @@ ttsToggleBtn.addEventListener("click", () => {
   ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
 
   if (autoReadEnabled) {
-    addMessage("🔊 Text-to-Speech active. I'll speak my responses.", "ai");
+    addMessage(
+      "🔊 Text-to-Speech active. I'll speak my responses.",
+      "system-success",
+    );
   } else {
-    addMessage("🔇 TTS turned off.", "ai");
+    addMessage("🔇 TTS turned off.", "system-success");
   }
 });
 
@@ -153,7 +156,7 @@ async function speak(text, langCode) {
     addMessage(
       `⚠️ No voice installed for ${langCode}.  
       Please install a voice for this language in your system settings.`,
-      "ai",
+      "system-error",
     );
   } else {
     utter.voice = voice;
@@ -273,7 +276,7 @@ listenBtn.addEventListener("click", async () => {
     body: JSON.stringify({
       prompt: "Give me a short sentence for listening practice.",
       targetLanguage,
-      difficulty
+      difficulty,
     }),
   });
   hideTyping();
@@ -326,6 +329,7 @@ const ttsStopBtn = document.getElementById("tts-stop-btn");
 
 ttsStopBtn.addEventListener("click", () => {
   speechSynthesis.cancel(); // <-- kills ALL ongoing speech instantly
+  addMessage("🔇 Voice playback stopped.", "system-success");
 });
 
 let cachedVoices = [];

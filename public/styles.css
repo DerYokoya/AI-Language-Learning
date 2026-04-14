@@ -329,3 +329,17 @@ body.dark .message td {
   background: #3a3a3a;
   border-color: #666;
 }
+
+/* System success (green outline) */
+.system-success {
+  border: 2px solid #4caf50;
+  background: #e8fbe8;
+  color: #1b5e20;
+}
+
+/* System error (red outline) */
+.system-error {
+  border: 2px solid #ff4d4d;
+  background: #ffecec;
+  color: #b30000;
+}
