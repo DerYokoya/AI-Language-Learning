@@ -312,3 +312,20 @@ body.dark #language-select {
   background: #f0f0f0;
   font-weight: bold;
 }
+
+.message tr:nth-child(even) td {
+  background: #f7f7f7;
+}
+
+.message tr:nth-child(odd) td {
+  background: #ffffff;
+}
+
+body.dark .message th {
+  background: #444;
+}
+
+body.dark .message td {
+  background: #3a3a3a;
+  border-color: #666;
+}
