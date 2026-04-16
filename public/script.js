@@ -440,11 +440,15 @@ function startFlashcardMode(cards) {
     ">
       <div id="fc-counter" style="font-size:13px; color:#888; margin-bottom:12px;"></div>
       <div id="fc-card" style="
-        background: #f5f7ff; border-radius: 12px; padding: 36px 24px;
-        min-height: 120px; display:flex; align-items:center; justify-content:center;
-        font-size: 1.5rem; cursor: pointer; transition: background 0.2s;
-        user-select: none; border: 2px solid #d0d8ff;
-      ">
+  background: #f5f7ff; border-radius: 12px; padding: 36px 24px;
+  min-height: 120px; display:flex; align-items:center; justify-content:center;
+  font-size: 1.5rem; cursor: pointer; transition: background 0.2s;
+  user-select: none; border: 2px solid #d0d8ff;
+  white-space: pre-wrap; /* To ensure a blank new line separate the translation and the example */
+">
+  <span id="fc-text"></span>
+</div>
+
         <span id="fc-text"></span>
       </div>
       <p id="fc-hint" style="font-size:13px; color:#aaa; margin-top:10px;">
