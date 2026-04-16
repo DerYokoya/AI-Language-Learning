@@ -368,14 +368,13 @@ flashcardBtn.addEventListener("click", async () => {
     body: JSON.stringify({
       prompt: `Generate exactly 6 flashcards to help me practice ${targetLanguage} at ${difficulty} level.
       Use vocabulary or phrases from our recent conversation if available, otherwise choose useful common words.
-
       Format EXACTLY like this (no extra text before or after):
 
       CARD:
       Front: [word or phrase in ${targetLanguage}]
-      Back: [English translation]
+      Back: [English translation]\n\n[Short usage example in ${targetLanguage}]
 
-      [short usage example in ${targetLanguage}]
+      IMPORTANT: Put TWO line breaks between the translation and the example.
 
       CARD:
       Front: ...
@@ -397,9 +396,13 @@ flashcardBtn.addEventListener("click", async () => {
 
 function parseFlashcards(text) {
   const blocks = text.split("CARD:").slice(1);
+
   return blocks.map((block) => {
-    const front = block.match(/Front:\s*(.*)/)?.[1]?.trim();
-    const back = block.match(/Back:\s*(.*)/)?.[1]?.trim();
+    const front = block.match(/Front:\s*([^\n]+)/)?.[1]?.trim();
+
+    const backMatch = block.match(/Back:\s*([\s\S]*?)(?=CARD:|$)/);
+    const back = backMatch ? backMatch[1].trim() : "";
+
     return { front, back };
   });
 }
