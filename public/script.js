@@ -357,7 +357,7 @@ flashcardBtn.addEventListener("click", async () => {
   const difficulty = difficultySelect.value;
 
   const historyText = conversationHistory
-    .map(m => `${m.sender}: ${m.text}`)
+    .map((m) => `${m.sender}: ${m.text}`)
     .join("\n");
 
   showTyping();
@@ -366,11 +366,27 @@ flashcardBtn.addEventListener("click", async () => {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      prompt: `Generate flashcards...`,
-      targetLanguage,
-      difficulty
-    })
-  });
+      prompt: `Generate exactly 6 flashcards to help me practice ${targetLanguage} at ${difficulty} level.
+      Use vocabulary or phrases from our recent conversation if available, otherwise choose useful common words.
+
+      Format EXACTLY like this (no extra text before or after):
+
+      CARD:
+      Front: [word or phrase in ${targetLanguage}]
+      Back: [English translation]
+
+      [short usage example in ${targetLanguage}]
+
+      CARD:
+      Front: ...
+      Back: ...
+
+      Conversation so far:
+      ${historyText || "(no conversation yet)"}`,
+            targetLanguage,
+            difficulty,
+          }),
+        });
 
   hideTyping();
 
@@ -381,9 +397,136 @@ flashcardBtn.addEventListener("click", async () => {
 
 function parseFlashcards(text) {
   const blocks = text.split("CARD:").slice(1);
-  return blocks.map(block => {
+  return blocks.map((block) => {
     const front = block.match(/Front:\s*(.*)/)?.[1]?.trim();
     const back = block.match(/Back:\s*(.*)/)?.[1]?.trim();
     return { front, back };
   });
+}
+
+// ---------- FLASHCARD MODE ----------
+function startFlashcardMode(cards) {
+  // Filter out any cards that failed to parse
+  cards = cards.filter((c) => c.front && c.back);
+
+  if (!cards.length) {
+    addMessage(
+      "⚠️ Couldn't generate flashcards. Try again after a short conversation.",
+      "system-error",
+    );
+    return;
+  }
+
+  let currentIndex = 0;
+  let flipped = false;
+
+  // Build overlay
+  const overlay = document.createElement("div");
+  overlay.id = "flashcard-overlay";
+  overlay.style.cssText = `
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; z-index: 9999; font-family: inherit;
+  `;
+
+  overlay.innerHTML = `
+    <div id="fc-container" style="
+      background: #fff; color: #111; border-radius: 16px;
+      padding: 32px 40px; max-width: 480px; width: 90%; text-align: center;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    ">
+      <div id="fc-counter" style="font-size:13px; color:#888; margin-bottom:12px;"></div>
+      <div id="fc-card" style="
+        background: #f5f7ff; border-radius: 12px; padding: 36px 24px;
+        min-height: 120px; display:flex; align-items:center; justify-content:center;
+        font-size: 1.5rem; cursor: pointer; transition: background 0.2s;
+        user-select: none; border: 2px solid #d0d8ff;
+      ">
+        <span id="fc-text"></span>
+      </div>
+      <p id="fc-hint" style="font-size:13px; color:#aaa; margin-top:10px;">
+        Click the card to flip
+      </p>
+      <div style="display:flex; gap:12px; margin-top:20px; justify-content:center;">
+        <button id="fc-prev" style="padding:10px 22px; border-radius:8px; border:1px solid #ccc; cursor:pointer; font-size:15px;">← Prev</button>
+        <button id="fc-flip" style="padding:10px 22px; border-radius:8px; background:#5b6af0; color:#fff; border:none; cursor:pointer; font-size:15px;">Flip</button>
+        <button id="fc-next" style="padding:10px 22px; border-radius:8px; border:1px solid #ccc; cursor:pointer; font-size:15px;">Next →</button>
+      </div>
+      <button id="fc-close" style="
+        margin-top:18px; background:none; border:none; color:#888;
+        font-size:13px; cursor:pointer; text-decoration:underline;
+      ">Close flashcards</button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  function render() {
+    const card = cards[currentIndex];
+    flipped = false;
+    document.getElementById("fc-text").textContent = card.front;
+    document.getElementById("fc-card").style.background = "#f5f7ff";
+    document.getElementById("fc-hint").textContent = "Click the card to flip";
+    document.getElementById("fc-counter").textContent =
+      `Card ${currentIndex + 1} of ${cards.length}`;
+  }
+
+  function doFlip() {
+    const card = cards[currentIndex];
+    flipped = !flipped;
+    document.getElementById("fc-text").textContent = flipped
+      ? card.back
+      : card.front;
+    document.getElementById("fc-card").style.background = flipped
+      ? "#e8f5e9"
+      : "#f5f7ff";
+    document.getElementById("fc-hint").textContent = flipped
+      ? "Back side"
+      : "Click the card to flip";
+  }
+
+  render();
+
+  document.getElementById("fc-card").addEventListener("click", doFlip);
+  document.getElementById("fc-flip").addEventListener("click", doFlip);
+
+  document.getElementById("fc-prev").addEventListener("click", () => {
+    currentIndex = (currentIndex - 1 + cards.length) % cards.length;
+    render();
+  });
+
+  document.getElementById("fc-next").addEventListener("click", () => {
+    currentIndex = (currentIndex + 1) % cards.length;
+    render();
+  });
+
+  document.getElementById("fc-close").addEventListener("click", () => {
+    overlay.remove();
+  });
+
+  // Close on backdrop click
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  // Keyboard navigation
+  function onKey(e) {
+    if (!document.getElementById("flashcard-overlay")) {
+      document.removeEventListener("keydown", onKey);
+      return;
+    }
+    if (e.key === "ArrowRight") {
+      currentIndex = (currentIndex + 1) % cards.length;
+      render();
+    } else if (e.key === "ArrowLeft") {
+      currentIndex = (currentIndex - 1 + cards.length) % cards.length;
+      render();
+    } else if (e.key === " " || e.key === "Enter") {
+      doFlip();
+      e.preventDefault();
+    } else if (e.key === "Escape") {
+      overlay.remove();
+    }
+  }
+  document.addEventListener("keydown", onKey);
 }
