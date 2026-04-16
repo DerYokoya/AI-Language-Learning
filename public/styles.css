@@ -134,13 +134,18 @@ body,
 
 #send-btn,
 #listen-practice-btn,
-#theme-toggle-btn {
+#theme-toggle-btn,
+#flashcard-btn {
   padding: 8px 14px;
   border: none;
   background: #0078ff;
   color: white;
   border-radius: 8px;
   cursor: pointer;
+}
+
+#flashcard-btn{
+  background: rgb(104, 0, 189);
 }
 
 #theme-toggle-btn {

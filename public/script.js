@@ -10,9 +10,11 @@ const ttsToggleBtn = document.getElementById("tts-toggle-btn");
 const ttsReplayBtn = document.getElementById("tts-replay-btn");
 const difficultySelect = document.getElementById("difficulty-select");
 
+const flashcardBtn = document.getElementById("flashcard-btn");
 const themeToggleBtn = document.getElementById("theme-toggle-btn");
 
 let lastAIMessage = "";
+let conversationHistory = [];
 
 ttsReplayBtn.addEventListener("click", () => {
   if (!lastAIMessage) {
@@ -116,6 +118,8 @@ function addMessage(text, sender) {
   msg.innerHTML = marked.parse(text);
   chatWindow.appendChild(msg);
   chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  conversationHistory.push({ sender, text });
 }
 
 // ---------- TYPING INDICATOR ----------
@@ -346,4 +350,40 @@ function getVoiceForLang(langCode) {
   if (exact) return exact;
   const prefix = langCode.split("-")[0];
   return voices.find((v) => v.lang.startsWith(prefix)) || null;
+}
+
+flashcardBtn.addEventListener("click", async () => {
+  const targetLanguage = languageSelect.value;
+  const difficulty = difficultySelect.value;
+
+  const historyText = conversationHistory
+    .map(m => `${m.sender}: ${m.text}`)
+    .join("\n");
+
+  showTyping();
+
+  const response = await fetch("/api/ai/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      prompt: `Generate flashcards...`,
+      targetLanguage,
+      difficulty
+    })
+  });
+
+  hideTyping();
+
+  const data = await response.json();
+  const cards = parseFlashcards(data.reply);
+  startFlashcardMode(cards);
+});
+
+function parseFlashcards(text) {
+  const blocks = text.split("CARD:").slice(1);
+  return blocks.map(block => {
+    const front = block.match(/Front:\s*(.*)/)?.[1]?.trim();
+    const back = block.match(/Back:\s*(.*)/)?.[1]?.trim();
+    return { front, back };
+  });
 }
