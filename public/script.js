@@ -13,8 +13,24 @@ const difficultySelect = document.getElementById("difficulty-select");
 const flashcardBtn = document.getElementById("flashcard-btn");
 const themeToggleBtn = document.getElementById("theme-toggle-btn");
 
+const savedTTS = localStorage.getItem("autoReadEnabled");
+if (savedTTS !== null) {
+  autoReadEnabled = savedTTS === "true";
+  ttsToggleBtn.textContent = autoReadEnabled ? "🔊 Auto-Read: ON" : "🔇 Auto-Read: OFF";
+  ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
+}
+
 let lastAIMessage = "";
 let conversationHistory = [];
+
+const savedLang = localStorage.getItem("selectedLanguage");
+if (savedLang) {
+  languageSelect.value = savedLang;
+}
+
+languageSelect.addEventListener("change", () => {
+  localStorage.setItem("selectedLanguage", languageSelect.value);
+});
 
 ttsReplayBtn.addEventListener("click", () => {
   if (!lastAIMessage) {
@@ -72,6 +88,9 @@ let autoReadEnabled = true;
 
 ttsToggleBtn.addEventListener("click", () => {
   autoReadEnabled = !autoReadEnabled;
+
+  localStorage.setItem("autoReadEnabled", autoReadEnabled ? "true" : "false");
+
   ttsToggleBtn.textContent = autoReadEnabled
     ? "🔊 Auto-Read: ON"
     : "🔇 Auto-Read: OFF";
@@ -120,7 +139,54 @@ function addMessage(text, sender) {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 
   conversationHistory.push({ sender, text });
+  saveChatHistory();
+
 }
+
+function saveChatHistory() {
+  const messages = [...document.querySelectorAll(".message")].map(m => ({
+    sender: m.classList.contains("user") ? "user" : "ai",
+    text: m.textContent || m.innerText, // Save the raw text instead of HTML
+    html: m.innerHTML
+  }));
+
+  localStorage.setItem("chatHistory", JSON.stringify(messages));
+}
+
+function loadChatHistory() {
+  const saved = localStorage.getItem("chatHistory");
+  if (!saved) return;
+
+  const messages = JSON.parse(saved);
+  messages.forEach(m => {
+    const msg = document.createElement("div");
+    msg.classList.add("message", m.sender);
+    msg.innerHTML = m.html;
+    chatWindow.appendChild(msg);
+    
+    // Rebuild conversationHistory array from saved messages
+    conversationHistory.push({ 
+      sender: m.sender, 
+      text: m.text || m.html.replace(/<[^>]*>/g, '') // Extract text from HTML if needed
+    });
+  });
+
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+const clearChatBtn = document.getElementById("clear-chat-btn");
+if (clearChatBtn) {
+  clearChatBtn.addEventListener("click", () => {
+    if (confirm("Clear all chat history?")) {
+      chatWindow.innerHTML = "";
+      conversationHistory = [];
+      localStorage.removeItem("chatHistory");
+      addMessage("Chat history cleared! Start a new conversation.", "system-success");
+    }
+  });
+}
+
+loadChatHistory();
 
 // ---------- TYPING INDICATOR ----------
 function showTyping() {
