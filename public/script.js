@@ -13,25 +13,88 @@ const difficultySelect = document.getElementById("difficulty-select");
 const flashcardBtn = document.getElementById("flashcard-btn");
 const themeToggleBtn = document.getElementById("theme-toggle-btn");
 
-const savedTTS = localStorage.getItem("autoReadEnabled");
-if (savedTTS !== null) {
-  autoReadEnabled = savedTTS === "true";
-  ttsToggleBtn.textContent = autoReadEnabled ? "🔊 Auto-Read: ON" : "🔇 Auto-Read: OFF";
-  ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
-}
-
 let lastAIMessage = "";
 let conversationHistory = [];
+let autoReadEnabled = true;
 
-const savedLang = localStorage.getItem("selectedLanguage");
-if (savedLang) {
-  languageSelect.value = savedLang;
+const langMap = {
+  Spanish: "es-ES",
+  French: "fr-FR",
+  German: "de-DE",
+  Italian: "it-IT",
+  Japanese: "ja-JP",
+  Korean: "ko-KR",
+  "Mandarin Chinese": "zh-CN",
+  English: "en-US",
+};
+
+// ---------- LOAD ALL SETTINGS FIRST ----------
+function loadAllSettings() {
+  // Load theme (MUST be first to prevent flash)
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "dark") {
+    document.body.classList.add("dark");
+    themeToggleBtn.textContent = "☀️ Light Mode";
+  } else {
+    document.body.classList.remove("dark");
+    themeToggleBtn.textContent = "🌙 Dark Mode";
+  }
+  
+  // Load language
+  const savedLang = localStorage.getItem("selectedLanguage");
+  if (savedLang) {
+    languageSelect.value = savedLang;
+  }
+  
+  // Load difficulty
+  const savedDifficulty = localStorage.getItem("selectedDifficulty");
+  if (savedDifficulty) {
+    difficultySelect.value = savedDifficulty;
+  }
+  
+  // Load TTS setting
+  const savedTTS = localStorage.getItem("autoReadEnabled");
+  if (savedTTS !== null) {
+    autoReadEnabled = savedTTS === "true";
+    ttsToggleBtn.textContent = autoReadEnabled ? "🔊 Auto-Read: ON" : "🔇 Auto-Read: OFF";
+    ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
+  }
 }
 
+// Call loadAllSettings IMMEDIATELY
+loadAllSettings();
+
+// ---------- SAVE SETTINGS WHEN THEY CHANGE ----------
 languageSelect.addEventListener("change", () => {
   localStorage.setItem("selectedLanguage", languageSelect.value);
 });
 
+difficultySelect.addEventListener("change", () => {
+  localStorage.setItem("selectedDifficulty", difficultySelect.value);
+});
+
+// Single theme toggle handler
+themeToggleBtn.addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+  const dark = document.body.classList.contains("dark");
+  themeToggleBtn.textContent = dark ? "☀️ Light Mode" : "🌙 Dark Mode";
+  localStorage.setItem("theme", dark ? "dark" : "light");
+});
+
+ttsToggleBtn.addEventListener("click", () => {
+  autoReadEnabled = !autoReadEnabled;
+  localStorage.setItem("autoReadEnabled", autoReadEnabled ? "true" : "false");
+  ttsToggleBtn.textContent = autoReadEnabled ? "🔊 Auto-Read: ON" : "🔇 Auto-Read: OFF";
+  ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
+  
+  if (autoReadEnabled) {
+    addMessage("🔊 Text-to-Speech active. I'll speak my responses.", "system-success");
+  } else {
+    addMessage("🔇 TTS turned off.", "system-success");
+  }
+});
+
+// ---------- TTS REPLAY ----------
 ttsReplayBtn.addEventListener("click", () => {
   if (!lastAIMessage) {
     addMessage("⚠️ No AI message to replay yet.", "system-error");
@@ -45,13 +108,6 @@ ttsReplayBtn.addEventListener("click", () => {
   const utter = new SpeechSynthesisUtterance(clean);
   utter.lang = langCode;
   speechSynthesis.speak(utter);
-});
-
-themeToggleBtn.addEventListener("click", () => {
-  document.body.classList.toggle("dark");
-
-  const dark = document.body.classList.contains("dark");
-  themeToggleBtn.textContent = dark ? "☀️ Light Mode" : "🌙 Dark Mode";
 });
 
 speechSynthesis.onvoiceschanged = () => {
@@ -72,56 +128,22 @@ function waitForVoices() {
   });
 }
 
-const langMap = {
-  Spanish: "es-ES",
-  French: "fr-FR",
-  German: "de-DE",
-  Italian: "it-IT",
-  Japanese: "ja-JP",
-  Korean: "ko-KR",
-  "Mandarin Chinese": "zh-CN",
-  English: "en-US",
-};
-
-// ---------- TTS TOGGLE ----------
-let autoReadEnabled = true;
-
-ttsToggleBtn.addEventListener("click", () => {
-  autoReadEnabled = !autoReadEnabled;
-
-  localStorage.setItem("autoReadEnabled", autoReadEnabled ? "true" : "false");
-
-  ttsToggleBtn.textContent = autoReadEnabled
-    ? "🔊 Auto-Read: ON"
-    : "🔇 Auto-Read: OFF";
-  ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
-
-  if (autoReadEnabled) {
-    addMessage(
-      "🔊 Text-to-Speech active. I'll speak my responses.",
-      "system-success",
-    );
-  } else {
-    addMessage("🔇 TTS turned off.", "system-success");
-  }
-});
-
 // ---------- STRIP MARKDOWN FOR SPEECH ----------
 function stripMarkdown(text) {
   return text
-    .replace(/```[\s\S]*?```/g, "") // code blocks
-    .replace(/`[^`]*`/g, "") // inline code
-    .replace(/#{1,6}\s*/g, "") // headings
-    .replace(/^\s*[-*+]\s+/gm, "") // bullets
-    .replace(/^>\s+/gm, "") // blockquotes
-    .replace(/\*\*(.*?)\*\*/g, "$1") // bold
-    .replace(/\*(.*?)\*/g, "$1") // italic
-    .replace(/_{1,2}(.*?)_{1,2}/g, "$1") // underscores
-    .replace(/\[(.*?)\]\(.*?\)/g, "$1") // links
-    .replace(/\n{2,}/g, ". ") // paragraph → pause
-    .replace(/\n/g, " ") // newlines
-    .replace(/#(\w+)/g, "$1") // remove inline hashtags
-    .replace(/[!?]/g, ".") // replace with a soft stop
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`[^`]*`/g, "")
+    .replace(/#{1,6}\s*/g, "")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/^>\s+/gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/_{1,2}(.*?)_{1,2}/g, "$1")
+    .replace(/\[(.*?)\]\(.*?\)/g, "$1")
+    .replace(/\n{2,}/g, ". ")
+    .replace(/\n/g, " ")
+    .replace(/#(\w+)/g, "$1")
+    .replace(/[!?]/g, ".")
     .trim();
 }
 
@@ -133,30 +155,54 @@ function addMessage(text, sender) {
   }
 
   const msg = document.createElement("div");
-  msg.classList.add("message", sender);
+  
+  if (sender === "user") {
+    msg.classList.add("message", "user");
+  } else if (sender === "system-error") {
+    msg.classList.add("message", "system-error");
+  } else if (sender === "system-success") {
+    msg.classList.add("message", "system-success");
+  } else {
+    msg.classList.add("message", "ai");
+  }
+  
   msg.innerHTML = marked.parse(text);
   chatWindow.appendChild(msg);
   chatWindow.scrollTop = chatWindow.scrollHeight;
 
-  conversationHistory.push({ sender, text });
+  if (sender === "user" || sender === "ai") {
+    conversationHistory.push({ sender, text });
+  }
+  
   saveChatHistory();
-
 }
 
 function saveChatHistory() {
-  const messages = [...document.querySelectorAll(".message")].map(m => ({
-    sender: m.classList.contains("user") ? "user" : "ai",
-    text: m.textContent || m.innerText, // Save the raw text instead of HTML
-    html: m.innerHTML
-  }));
-
+  const messages = [];
+  const messageElements = document.querySelectorAll(".message");
+  
+  messageElements.forEach(msg => {
+    let sender = "";
+    if (msg.classList.contains("user")) sender = "user";
+    else if (msg.classList.contains("ai")) sender = "ai";
+    else if (msg.classList.contains("system-error")) sender = "system-error";
+    else if (msg.classList.contains("system-success")) sender = "system-success";
+    else sender = "ai";
+    
+    messages.push({
+      sender: sender,
+      text: msg.textContent || msg.innerText,
+      html: msg.innerHTML
+    });
+  });
+  
   localStorage.setItem("chatHistory", JSON.stringify(messages));
 }
 
 function loadChatHistory() {
   const saved = localStorage.getItem("chatHistory");
   if (!saved) return;
-
+  
   const messages = JSON.parse(saved);
   messages.forEach(m => {
     const msg = document.createElement("div");
@@ -164,13 +210,14 @@ function loadChatHistory() {
     msg.innerHTML = m.html;
     chatWindow.appendChild(msg);
     
-    // Rebuild conversationHistory array from saved messages
-    conversationHistory.push({ 
-      sender: m.sender, 
-      text: m.text || m.html.replace(/<[^>]*>/g, '') // Extract text from HTML if needed
-    });
+    if (m.sender === "user" || m.sender === "ai") {
+      conversationHistory.push({ 
+        sender: m.sender, 
+        text: m.text
+      });
+    }
   });
-
+  
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
@@ -185,8 +232,6 @@ if (clearChatBtn) {
     }
   });
 }
-
-loadChatHistory();
 
 // ---------- TYPING INDICATOR ----------
 function showTyping() {
@@ -213,19 +258,17 @@ function hideTyping() {
 async function speak(text, langCode) {
   if (!autoReadEnabled) return;
 
-  await waitForVoices(); // <-- ensures voices are loaded
+  await waitForVoices();
 
   const clean = stripMarkdown(text);
   const utter = new SpeechSynthesisUtterance(clean);
-
   utter.lang = langCode;
 
   const voice = getVoiceForLang(langCode);
 
   if (!voice) {
     addMessage(
-      `⚠️ No voice installed for ${langCode}.  
-      Please install a voice for this language in your system settings.`,
+      `⚠️ No voice installed for ${langCode}. Please install a voice for this language in your system settings.`,
       "system-error",
     );
   } else {
@@ -234,22 +277,7 @@ async function speak(text, langCode) {
 
   utter.rate = 1;
   utter.pitch = 1;
-
   speechSynthesis.speak(utter);
-}
-
-function waitForVoices() {
-  return new Promise((resolve) => {
-    let voices = speechSynthesis.getVoices();
-    if (voices.length) {
-      resolve(voices);
-      return;
-    }
-    speechSynthesis.onvoiceschanged = () => {
-      voices = speechSynthesis.getVoices();
-      resolve(voices);
-    };
-  });
 }
 
 // ---------- SPEECH RECOGNITION SETUP ----------
@@ -398,7 +426,7 @@ listenBtn.addEventListener("click", async () => {
 const ttsStopBtn = document.getElementById("tts-stop-btn");
 
 ttsStopBtn.addEventListener("click", () => {
-  speechSynthesis.cancel(); // <-- kills ALL ongoing speech instantly
+  speechSynthesis.cancel();
   addMessage("🔇 Voice playback stopped.", "system-success");
 });
 
@@ -418,6 +446,7 @@ function getVoiceForLang(langCode) {
   return voices.find((v) => v.lang.startsWith(prefix)) || null;
 }
 
+// ---------- FLASHCARDS ----------
 flashcardBtn.addEventListener("click", async () => {
   const targetLanguage = languageSelect.value;
   const difficulty = difficultySelect.value;
@@ -448,10 +477,10 @@ flashcardBtn.addEventListener("click", async () => {
 
       Conversation so far:
       ${historyText || "(no conversation yet)"}`,
-            targetLanguage,
-            difficulty,
-          }),
-        });
+      targetLanguage,
+      difficulty,
+    }),
+  });
 
   hideTyping();
 
@@ -465,31 +494,23 @@ function parseFlashcards(text) {
 
   return blocks.map((block) => {
     const front = block.match(/Front:\s*([^\n]+)/)?.[1]?.trim();
-
     const backMatch = block.match(/Back:\s*([\s\S]*?)(?=CARD:|$)/);
     const back = backMatch ? backMatch[1].trim() : "";
-
     return { front, back };
   });
 }
 
-// ---------- FLASHCARD MODE ----------
 function startFlashcardMode(cards) {
-  // Filter out any cards that failed to parse
   cards = cards.filter((c) => c.front && c.back);
 
   if (!cards.length) {
-    addMessage(
-      "⚠️ Couldn't generate flashcards. Try again after a short conversation.",
-      "system-error",
-    );
+    addMessage("⚠️ Couldn't generate flashcards. Try again after a short conversation.", "system-error");
     return;
   }
 
   let currentIndex = 0;
   let flipped = false;
 
-  // Build overlay
   const overlay = document.createElement("div");
   overlay.id = "flashcard-overlay";
   overlay.style.cssText = `
@@ -506,15 +527,12 @@ function startFlashcardMode(cards) {
     ">
       <div id="fc-counter" style="font-size:13px; color:#888; margin-bottom:12px;"></div>
       <div id="fc-card" style="
-  background: #f5f7ff; border-radius: 12px; padding: 36px 24px;
-  min-height: 120px; display:flex; align-items:center; justify-content:center;
-  font-size: 1.5rem; cursor: pointer; transition: background 0.2s;
-  user-select: none; border: 2px solid #d0d8ff;
-  white-space: pre-wrap; /* To ensure a blank new line separate the translation and the example */
-">
-  <span id="fc-text"></span>
-</div>
-
+        background: #f5f7ff; border-radius: 12px; padding: 36px 24px;
+        min-height: 120px; display:flex; align-items:center; justify-content:center;
+        font-size: 1.5rem; cursor: pointer; transition: background 0.2s;
+        user-select: none; border: 2px solid #d0d8ff;
+        white-space: pre-wrap;
+      ">
         <span id="fc-text"></span>
       </div>
       <p id="fc-hint" style="font-size:13px; color:#aaa; margin-top:10px;">
@@ -540,22 +558,15 @@ function startFlashcardMode(cards) {
     document.getElementById("fc-text").textContent = card.front;
     document.getElementById("fc-card").style.background = "#f5f7ff";
     document.getElementById("fc-hint").textContent = "Click the card to flip";
-    document.getElementById("fc-counter").textContent =
-      `Card ${currentIndex + 1} of ${cards.length}`;
+    document.getElementById("fc-counter").textContent = `Card ${currentIndex + 1} of ${cards.length}`;
   }
 
   function doFlip() {
     const card = cards[currentIndex];
     flipped = !flipped;
-    document.getElementById("fc-text").textContent = flipped
-      ? card.back
-      : card.front;
-    document.getElementById("fc-card").style.background = flipped
-      ? "#e8f5e9"
-      : "#f5f7ff";
-    document.getElementById("fc-hint").textContent = flipped
-      ? "Back side"
-      : "Click the card to flip";
+    document.getElementById("fc-text").textContent = flipped ? card.back : card.front;
+    document.getElementById("fc-card").style.background = flipped ? "#e8f5e9" : "#f5f7ff";
+    document.getElementById("fc-hint").textContent = flipped ? "Back side" : "Click the card to flip";
   }
 
   render();
@@ -577,12 +588,10 @@ function startFlashcardMode(cards) {
     overlay.remove();
   });
 
-  // Close on backdrop click
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) overlay.remove();
   });
 
-  // Keyboard navigation
   function onKey(e) {
     if (!document.getElementById("flashcard-overlay")) {
       document.removeEventListener("keydown", onKey);
@@ -603,3 +612,6 @@ function startFlashcardMode(cards) {
   }
   document.addEventListener("keydown", onKey);
 }
+
+// Load chat history after everything is set up
+loadChatHistory();

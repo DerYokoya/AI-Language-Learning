@@ -348,3 +348,41 @@ body.dark .message td {
   background: #ffecec;
   color: #b30000;
 }
+
+.message.system-error {
+  background: #ffebee;
+  color: #c62828;
+  border-left: 4px solid #c62828;
+  font-style: italic;
+}
+
+.message.system-success {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-left: 4px solid #2e7d32;
+  font-style: italic;
+}
+
+/* Dark mode versions */
+body.dark .message.system-error {
+  background: #4a1a1a;
+  color: #ff8a80;
+  border-left-color: #ff5252;
+}
+
+body.dark .message.system-success {
+  background: #1b3b1f;
+  color: #a5d6a7;
+  border-left-color: #4caf50;
+}
+
+#clear-chat-btn {
+  background: #ff878f;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 10px;
+}
