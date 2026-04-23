@@ -568,6 +568,25 @@ function startFlashcardMode(cards, newlyAdded = 0) {
 
   let currentIndex = 0;
   let flipped = false;
+  const dark = document.body.classList.contains("dark");
+
+  // Theme-aware color palette
+  const t = {
+    bg:          dark ? "#2a2a2a" : "#fff",
+    text:        dark ? "#f1f1f1" : "#111",
+    subtext:     dark ? "#aaa"    : "#888",
+    hint:        dark ? "#777"    : "#aaa",
+    cardBg:      dark ? "#3a3a3a" : "#f5f7ff",
+    cardBorder:  dark ? "#4a5080" : "#d0d8ff",
+    cardFlipped: dark ? "#1b3b1f" : "#e8f5e9",
+    progressBg:  dark ? "#444"    : "#eee",
+    btnBg:       dark ? "#3a3a3a" : "#fff",
+    btnBorder:   dark ? "#555"    : "#ccc",
+    btnText:     dark ? "#ddd"    : "#333",
+    tabInactBg:  dark ? "#3a3a3a" : "#fff",
+    tabInactTxt: dark ? "#bbb"    : "#555",
+    tabInactBdr: dark ? "#555"    : "#ccc",
+  };
 
   const overlay = document.createElement("div");
   overlay.id = "flashcard-overlay";
@@ -577,24 +596,22 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     justify-content: center; z-index: 9999; font-family: inherit;
   `;
 
-  const stats = getStats(cards);
-
   overlay.innerHTML = `
     <div id="fc-container" style="
-      background: #fff; color: #111; border-radius: 20px;
+      background: ${t.bg}; color: ${t.text}; border-radius: 20px;
       padding: 28px 36px; max-width: 520px; width: 92%; text-align: center;
       box-shadow: 0 12px 48px rgba(0,0,0,0.45);
     ">
       <!-- Header -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <div id="fc-counter" style="font-size:13px; color:#888;"></div>
-        <div id="fc-stats" style="font-size:13px; color:#888;"></div>
+        <div id="fc-counter" style="font-size:13px; color:${t.subtext};"></div>
+        <div id="fc-stats" style="font-size:13px; color:${t.subtext};"></div>
       </div>
 
-      ${newlyAdded > 0 ? `<div id="fc-new-badge" style="font-size:12px; color:#5b6af0; margin-bottom:8px; font-weight:600;">+${newlyAdded} new card${newlyAdded > 1 ? 's' : ''} added to your deck!</div>` : ""}
+      ${newlyAdded > 0 ? `<div id="fc-new-badge" style="font-size:12px; color:#7b8ef8; margin-bottom:8px; font-weight:600;">+${newlyAdded} new card${newlyAdded > 1 ? 's' : ''} added to your deck!</div>` : ""}
 
       <!-- Progress bar -->
-      <div style="background:#eee; border-radius:999px; height:6px; margin-bottom:16px; overflow:hidden;">
+      <div style="background:${t.progressBg}; border-radius:999px; height:6px; margin-bottom:16px; overflow:hidden;">
         <div id="fc-progress-bar" style="height:100%; background: linear-gradient(90deg, #5b6af0, #8b9cf8); border-radius:999px; transition: width 0.3s;"></div>
       </div>
 
@@ -603,54 +620,54 @@ function startFlashcardMode(cards, newlyAdded = 0) {
         border-radius: 14px; padding: 36px 24px;
         min-height: 130px; display:flex; align-items:center; justify-content:center;
         font-size: 1.5rem; cursor: pointer; transition: background 0.25s, border-color 0.25s;
-        user-select: none; border: 2px solid #d0d8ff; background: #f5f7ff;
+        user-select: none; border: 2px solid ${t.cardBorder}; background: ${t.cardBg};
         white-space: pre-wrap; flex-direction: column; gap: 8px;
       ">
-        <span id="fc-text" style="font-size:1.5rem;"></span>
+        <span id="fc-text" style="font-size:1.5rem; color:${t.text};"></span>
         <span id="fc-known-badge" style="font-size:12px; display:none; padding:2px 10px; border-radius:999px; background:#4caf50; color:#fff; font-weight:600;">✓ Known</span>
       </div>
-      <p id="fc-hint" style="font-size:13px; color:#aaa; margin-top:10px; min-height:18px;"></p>
+      <p id="fc-hint" style="font-size:13px; color:${t.hint}; margin-top:10px; min-height:18px;"></p>
 
       <!-- Navigation -->
       <div style="display:flex; gap:10px; margin-top:16px; justify-content:center; flex-wrap: wrap;">
-        <button id="fc-prev" style="padding:10px 18px; border-radius:9px; border:1px solid #ccc; cursor:pointer; font-size:14px; background:#fff;">← Prev</button>
+        <button id="fc-prev" style="padding:10px 18px; border-radius:9px; border:1px solid ${t.btnBorder}; cursor:pointer; font-size:14px; background:${t.btnBg}; color:${t.btnText};">← Prev</button>
         <button id="fc-flip" style="padding:10px 18px; border-radius:9px; background:#5b6af0; color:#fff; border:none; cursor:pointer; font-size:14px;">Flip</button>
-        <button id="fc-next" style="padding:10px 18px; border-radius:9px; border:1px solid #ccc; cursor:pointer; font-size:14px; background:#fff;">Next →</button>
+        <button id="fc-next" style="padding:10px 18px; border-radius:9px; border:1px solid ${t.btnBorder}; cursor:pointer; font-size:14px; background:${t.btnBg}; color:${t.btnText};">Next →</button>
       </div>
 
       <!-- Known / Don't Know buttons -->
       <div style="display:flex; gap:12px; margin-top:14px; justify-content:center; flex-wrap:wrap; align-items:center;">
         <button id="fc-unknown" style="
           padding:11px 24px; border-radius:10px; border:2px solid #ef5350;
-          background:#fff; color:#ef5350; cursor:pointer; font-size:14px; font-weight:600;
+          background:${t.btnBg}; color:#ef5350; cursor:pointer; font-size:14px; font-weight:600;
           transition: background 0.15s, color 0.15s;
         ">✗ Don't Know</button>
         <button id="fc-known" style="
           padding:11px 24px; border-radius:10px; border:2px solid #4caf50;
-          background:#fff; color:#4caf50; cursor:pointer; font-size:14px; font-weight:600;
+          background:${t.btnBg}; color:#4caf50; cursor:pointer; font-size:14px; font-weight:600;
           transition: background 0.15s, color 0.15s;
         ">✓ Know It</button>
       </div>
       <!-- Auto-skip toggle -->
       <div style="margin-top:10px; text-align:center;">
         <button id="fc-autoskip-toggle" style="
-          padding:5px 16px; border-radius:999px; border:1px solid #ccc;
-          background:#fff; color:#888; cursor:pointer; font-size:12px;
+          padding:5px 16px; border-radius:999px; border:1px solid ${t.btnBorder};
+          background:${t.btnBg}; color:${t.hint}; cursor:pointer; font-size:12px;
           transition: background 0.15s, color 0.15s, border-color 0.15s;
           position:relative; z-index:10;
         ">⏭ Auto-skip: OFF</button>
       </div>
 
       <!-- Review filter tabs -->
-      <div style="display:flex; gap:8px; margin-top:16px; justify-content:center; font-size:13px;">
+      <div style="display:flex; gap:8px; margin-top:16px; justify-content:center; font-size:13px; flex-wrap:wrap;">
         <button id="fc-tab-all" class="fc-tab fc-tab-active" style="padding:5px 14px; border-radius:999px; border:1px solid #5b6af0; background:#5b6af0; color:#fff; cursor:pointer; font-size:12px;">All</button>
-        <button id="fc-tab-unknown" class="fc-tab" style="padding:5px 14px; border-radius:999px; border:1px solid #ccc; background:#fff; color:#555; cursor:pointer; font-size:12px;">❓ Study</button>
-        <button id="fc-tab-known" class="fc-tab" style="padding:5px 14px; border-radius:999px; border:1px solid #ccc; background:#fff; color:#555; cursor:pointer; font-size:12px;">✓ Mastered</button>
-        <button id="fc-clear-deck" style="padding:5px 14px; border-radius:999px; border:1px solid #f44336; background:#fff; color:#f44336; cursor:pointer; font-size:12px;">🗑 Clear Deck</button>
+        <button id="fc-tab-unknown" class="fc-tab" style="padding:5px 14px; border-radius:999px; border:1px solid ${t.tabInactBdr}; background:${t.tabInactBg}; color:${t.tabInactTxt}; cursor:pointer; font-size:12px;">❓ Study</button>
+        <button id="fc-tab-known" class="fc-tab" style="padding:5px 14px; border-radius:999px; border:1px solid ${t.tabInactBdr}; background:${t.tabInactBg}; color:${t.tabInactTxt}; cursor:pointer; font-size:12px;">✓ Mastered</button>
+        <button id="fc-clear-deck" style="padding:5px 14px; border-radius:999px; border:1px solid #f44336; background:${t.btnBg}; color:#f44336; cursor:pointer; font-size:12px;">🗑 Clear Deck</button>
       </div>
 
       <button id="fc-close" style="
-        margin-top:18px; background:none; border:none; color:#aaa;
+        margin-top:18px; background:none; border:none; color:${t.hint};
         font-size:13px; cursor:pointer; text-decoration:underline;
       ">Close flashcards</button>
     </div>
@@ -705,8 +722,8 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     const card = viewCards[currentIndex];
     flipped = false;
     document.getElementById("fc-text").textContent = card.front;
-    document.getElementById("fc-card").style.background = "#f5f7ff";
-    document.getElementById("fc-card").style.borderColor = card.known ? "#4caf50" : "#d0d8ff";
+    document.getElementById("fc-card").style.background = t.cardBg;
+    document.getElementById("fc-card").style.borderColor = card.known ? "#4caf50" : t.cardBorder;
     document.getElementById("fc-hint").textContent = "Click the card to flip • Space or Enter to flip";
     document.getElementById("fc-counter").textContent = `Card ${currentIndex + 1} of ${viewCards.length}`;
 
@@ -721,7 +738,7 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     const card = viewCards[currentIndex];
     flipped = !flipped;
     document.getElementById("fc-text").textContent = flipped ? card.back : card.front;
-    document.getElementById("fc-card").style.background = flipped ? "#e8f5e9" : "#f5f7ff";
+    document.getElementById("fc-card").style.background = flipped ? t.cardFlipped : t.cardBg;
     document.getElementById("fc-hint").textContent = flipped ? "Back side" : "Click the card to flip • Space or Enter to flip";
   }
 
@@ -762,17 +779,17 @@ function startFlashcardMode(cards, newlyAdded = 0) {
   function setTab(tab) {
     activeView = tab;
     currentIndex = 0;
-    ["all", "unknown", "known"].forEach((t) => {
-      const btn = document.getElementById(`fc-tab-${t}`);
+    ["all", "unknown", "known"].forEach((tabId) => {
+      const btn = document.getElementById(`fc-tab-${tabId}`);
       if (!btn) return;
-      if (t === tab) {
+      if (tabId === tab) {
         btn.style.background = "#5b6af0";
         btn.style.color = "#fff";
         btn.style.borderColor = "#5b6af0";
       } else {
-        btn.style.background = "#fff";
-        btn.style.color = "#555";
-        btn.style.borderColor = "#ccc";
+        btn.style.background = t.tabInactBg;
+        btn.style.color = t.tabInactTxt;
+        btn.style.borderColor = t.tabInactBdr;
       }
     });
     refreshViewCards();
@@ -838,9 +855,9 @@ function startFlashcardMode(cards, newlyAdded = 0) {
   const unknownBtn = document.getElementById("fc-unknown");
 
   knownBtn.addEventListener("mouseenter", () => { knownBtn.style.background = "#4caf50"; knownBtn.style.color = "#fff"; });
-  knownBtn.addEventListener("mouseleave", () => { knownBtn.style.background = "#fff"; knownBtn.style.color = "#4caf50"; });
+  knownBtn.addEventListener("mouseleave", () => { knownBtn.style.background = t.btnBg; knownBtn.style.color = "#4caf50"; });
   unknownBtn.addEventListener("mouseenter", () => { unknownBtn.style.background = "#ef5350"; unknownBtn.style.color = "#fff"; });
-  unknownBtn.addEventListener("mouseleave", () => { unknownBtn.style.background = "#fff"; unknownBtn.style.color = "#ef5350"; });
+  unknownBtn.addEventListener("mouseleave", () => { unknownBtn.style.background = t.btnBg; unknownBtn.style.color = "#ef5350"; });
 
   function onKey(e) {
     if (!document.getElementById("flashcard-overlay")) {
