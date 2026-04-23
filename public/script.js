@@ -619,7 +619,7 @@ function startFlashcardMode(cards, newlyAdded = 0) {
       </div>
 
       <!-- Known / Don't Know buttons -->
-      <div style="display:flex; gap:12px; margin-top:14px; justify-content:center;">
+      <div style="display:flex; gap:12px; margin-top:14px; justify-content:center; flex-wrap:wrap; align-items:center;">
         <button id="fc-unknown" style="
           padding:11px 24px; border-radius:10px; border:2px solid #ef5350;
           background:#fff; color:#ef5350; cursor:pointer; font-size:14px; font-weight:600;
@@ -630,6 +630,15 @@ function startFlashcardMode(cards, newlyAdded = 0) {
           background:#fff; color:#4caf50; cursor:pointer; font-size:14px; font-weight:600;
           transition: background 0.15s, color 0.15s;
         ">✓ Know It</button>
+      </div>
+      <!-- Auto-skip toggle -->
+      <div style="margin-top:10px; text-align:center;">
+        <button id="fc-autoskip-toggle" style="
+          padding:5px 16px; border-radius:999px; border:1px solid #ccc;
+          background:#fff; color:#888; cursor:pointer; font-size:12px;
+          transition: background 0.15s, color 0.15s, border-color 0.15s;
+          position:relative; z-index:10;
+        ">⏭ Auto-skip: OFF</button>
       </div>
 
       <!-- Review filter tabs -->
@@ -652,6 +661,7 @@ function startFlashcardMode(cards, newlyAdded = 0) {
   // Active view: "all" | "unknown" | "known"
   let activeView = "all";
   let viewCards = [...cards];
+  let autoSkip = false;
 
   function getViewCards() {
     const all = loadSavedCards().filter(
@@ -723,12 +733,13 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     document.getElementById("fc-card").style.borderColor = "#4caf50";
     document.getElementById("fc-known-badge").style.display = "inline-block";
     updateStats();
-    // Auto advance
-    setTimeout(() => {
-      refreshViewCards();
-      if (currentIndex >= viewCards.length) currentIndex = 0;
-      render();
-    }, 600);
+    if (autoSkip) {
+      setTimeout(() => {
+        refreshViewCards();
+        if (currentIndex >= viewCards.length) currentIndex = 0;
+        render();
+      }, 600);
+    }
   }
 
   function doUnknown() {
@@ -739,11 +750,13 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     document.getElementById("fc-card").style.borderColor = "#ef5350";
     document.getElementById("fc-known-badge").style.display = "none";
     updateStats();
-    setTimeout(() => {
-      refreshViewCards();
-      currentIndex = (currentIndex + 1) % Math.max(1, viewCards.length);
-      render();
-    }, 600);
+    if (autoSkip) {
+      setTimeout(() => {
+        refreshViewCards();
+        currentIndex = (currentIndex + 1) % Math.max(1, viewCards.length);
+        render();
+      }, 600);
+    }
   }
 
   function setTab(tab) {
@@ -787,6 +800,22 @@ function startFlashcardMode(cards, newlyAdded = 0) {
   document.getElementById("fc-tab-all").addEventListener("click", () => setTab("all"));
   document.getElementById("fc-tab-unknown").addEventListener("click", () => setTab("unknown"));
   document.getElementById("fc-tab-known").addEventListener("click", () => setTab("known"));
+
+  document.getElementById("fc-autoskip-toggle").addEventListener("click", () => {
+    autoSkip = !autoSkip;
+    const btn = document.getElementById("fc-autoskip-toggle");
+    if (autoSkip) {
+      btn.textContent = "⏭ Auto-skip: ON";
+      btn.style.background = "#5b6af0";
+      btn.style.color = "#fff";
+      btn.style.borderColor = "#5b6af0";
+    } else {
+      btn.textContent = "⏭ Auto-skip: OFF";
+      btn.style.background = "#fff";
+      btn.style.color = "#888";
+      btn.style.borderColor = "#ccc";
+    }
+  });
 
   document.getElementById("fc-clear-deck").addEventListener("click", () => {
     const lang = languageSelect.value;
