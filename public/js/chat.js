@@ -1,4 +1,4 @@
-import { autoReadEnabled, conversationHistory } from './main.js';
+import { autoReadEnabled, conversationHistory, setMode } from './main.js';
 
 const chatWindow = document.getElementById("chat-window");
 const userInput = document.getElementById("user-input");
@@ -9,6 +9,8 @@ const ttsStopBtn = document.getElementById("tts-stop-btn");
 
 let lastAIMessage = "";
 let recognition = null;
+let currentMode = "conversation";
+let currentScenario = "restaurant";
 
 const langMap = {
   Spanish: "es-ES",
@@ -20,6 +22,83 @@ const langMap = {
   "Mandarin Chinese": "zh-CN",
   English: "en-US",
 };
+
+const roleplayScenarios = {
+  restaurant: "restaurant (ordering food, asking about menu, paying bill)",
+  airport: "airport (check-in, security, boarding, baggage claim)",
+  hotel: "hotel (check-in, room service, complaints, check-out)",
+  shopping: "shopping mall (asking prices, sizes, returns, bargaining)",
+  doctor: "doctor's office (symptoms, appointments, prescriptions)",
+  jobInterview: "job interview (自我介绍, qualifications, experience, questions)",
+  taxi: "taxi (directions, payment, destinations)",
+  phoneCall: "phone call (making appointments, customer service, leaving messages)"
+};
+
+// Mode getters/setters
+export function getCurrentMode() {
+  return currentMode;
+}
+
+export function setCurrentMode(mode) {
+  currentMode = mode;
+}
+
+export function getCurrentScenario() {
+  return currentScenario;
+}
+
+export function setCurrentScenario(scenario) {
+  currentScenario = scenario;
+}
+
+// Mode-specific prompt builder
+function getModePrompt(userMessage, targetLanguage, difficulty) {
+  const basePrompt = `You are a ${targetLanguage} language tutor. The student is at ${difficulty} level. `;
+  
+  switch(currentMode) {
+    case "grammar":
+      return basePrompt + `This is GRAMMAR CORRECTION mode. Focus on correcting the student's grammar, explaining the rule, and providing the correct version. 
+      Student's message: "${userMessage}"
+      
+      Respond in this format:
+      📝 **Correction**: [corrected version]
+      📖 **Rule Explanation**: [simple grammar rule explanation]
+      💡 **Tip**: [helpful tip to remember this rule]
+      🎯 **Practice**: [short exercise for the student]`;
+      
+    case "vocabulary":
+      return basePrompt + `This is VOCABULARY BUILDING mode. Focus on teaching new words, synonyms, antonyms, and usage.
+      Student's message: "${userMessage}"
+      
+      If the student used a word incorrectly or asks about a word, respond in this format:
+      📚 **Word/Phrase**: [the word/phrase being taught]
+      🌎 **Meaning**: [meaning in English]
+      📝 **Example Sentences**: 
+      1. [sentence 1 in ${targetLanguage}]
+      2. [sentence 2 in ${targetLanguage}]
+      🔄 **Related Words**: [synonyms, antonyms, or related vocabulary]
+      ✍️ **Practice**: [use this word in a sentence challenge]
+      
+      If the student just wrote a normal message, teach 2-3 new relevant vocabulary words based on their message.`;
+      
+    case "roleplay":
+      const scenario = roleplayScenarios[currentScenario] || roleplayScenarios.restaurant;
+      return basePrompt + `This is ROLEPLAY mode. Scenario: ${scenario}.
+      You are playing a character appropriate for this scenario (waiter, receptionist, doctor, etc.).
+      Stay in character. Respond naturally as that person would.
+      Keep your responses to 1-2 sentences so the student can practice back-and-forth conversation.
+      Student says: "${userMessage}"
+      
+      Respond as your character naturally would. After every 3 exchanges, provide a small feedback tip in (parentheses).`;
+      
+    default: // conversation mode
+      return basePrompt + `This is CONVERSATION PRACTICE mode. Have a natural conversation with the student.
+      Correct their mistakes gently. Ask follow-up questions to keep the conversation going.
+      Student's message: "${userMessage}"
+      
+      Respond naturally, then ask a relevant follow-up question. Keep your response encouraging and educational.`;
+  }
+}
 
 // Speech synthesis setup
 let cachedVoices = [];
@@ -176,14 +255,17 @@ export async function sendMessage() {
   userInput.value = "";
   showTyping();
 
+  const prompt = getModePrompt(text, targetLanguage, difficulty);
+
   try {
     const response = await fetch("/api/ai/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        prompt: text,
+        prompt: prompt,
         targetLanguage,
         difficulty,
+        mode: currentMode,
       }),
     });
 
@@ -261,5 +343,5 @@ ttsStopBtn.addEventListener("click", () => {
 });
 
 export function initChat() {
-  console.log("Chat module initialized");
+  console.log("Chat module initialized with learning modes");
 }

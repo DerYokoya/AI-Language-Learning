@@ -17,6 +17,29 @@
         <button id="flashcard-btn">📇 Generate Flashcards</button>
         <button id="theme-toggle-btn">🌙 Dark Mode</button>
         <button id="clear-chat-btn">🗑️ Clear Chat</button>
+
+        <!-- Learning Mode Buttons -->
+        <div class="mode-selector">
+          <button id="mode-conversation" class="mode-btn active-mode">
+            💬 Conversation
+          </button>
+          <button id="mode-grammar" class="mode-btn">📝 Grammar</button>
+          <button id="mode-vocabulary" class="mode-btn">📚 Vocabulary</button>
+          <button id="mode-roleplay" class="mode-btn">🎭 Roleplay</button>
+          <select
+            id="roleplay-scenario"
+            style="display: none; margin-left: 10px"
+          >
+            <option value="restaurant">🍽️ Restaurant</option>
+            <option value="airport">✈️ Airport</option>
+            <option value="hotel">🏨 Hotel</option>
+            <option value="shopping">🛍️ Shopping Mall</option>
+            <option value="doctor">🏥 Doctor's Office</option>
+            <option value="jobInterview">💼 Job Interview</option>
+            <option value="taxi">🚕 Taxi</option>
+            <option value="phoneCall">📞 Phone Call</option>
+          </select>
+        </div>
         <br />
       </header>
       <div class="chat-container">

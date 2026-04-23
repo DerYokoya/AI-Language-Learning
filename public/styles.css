@@ -386,3 +386,45 @@ body.dark .message.system-success {
   font-size: 14px;
   margin-right: 10px;
 }
+
+/* Learning Mode Buttons */
+.mode-selector {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mode-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color, #ccc);
+  background: var(--btn-bg, #f0f0f0);
+  color: var(--btn-text, #333);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.mode-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.mode-btn.active-mode {
+  background: #5b6af0;
+  color: white;
+  border-color: #5b6af0;
+}
+
+#roleplay-scenario {
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color, #ccc);
+  background: var(--btn-bg, #f0f0f0);
+  color: var(--btn-text, #333);
+  cursor: pointer;
+  font-size: 14px;
+}
