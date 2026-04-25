@@ -295,20 +295,53 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     document.getElementById("fc-hint").textContent = flipped ? "Back side" : "Click the card to flip • Space or Enter to flip";
   }
 
+  function goToNextCard() {
+    if (viewCards.length === 0) return;
+    
+    // Move to next card
+    if (currentIndex + 1 < viewCards.length) {
+      currentIndex++;
+      render();
+    } else if (currentIndex + 1 >= viewCards.length) {
+      // Reached the end, wrap around or show completion message
+      if (activeView === "unknown" && viewCards.length > 0) {
+        // Check if there are any unknown cards left
+        const remainingUnknown = viewCards.filter(c => !c.known).length;
+        if (remainingUnknown === 0) {
+          addMessage("🎉 Congratulations! You've mastered all cards in this session!", "system-success");
+        }
+      }
+      currentIndex = 0;
+      render();
+    }
+  }
+
   function doKnown() {
     if (!viewCards.length) return;
     const card = viewCards[currentIndex];
     markCard(card.id, true);
     card.known = true;
+    
+    // Update visual feedback
     document.getElementById("fc-card").style.borderColor = "#4caf50";
     document.getElementById("fc-known-badge").style.display = "inline-block";
     updateStats();
+    
     if (autoSkip) {
+      // Small delay to show the "Known" visual feedback before auto-skipping
       setTimeout(() => {
+        // Refresh the view cards (in case the view filters out known cards)
+        const oldViewCardsLength = viewCards.length;
         refreshViewCards();
-        if (currentIndex >= viewCards.length) currentIndex = 0;
-        render();
-      }, 600);
+        
+        // If the current card was removed from view (e.g., in "Study" mode), 
+        // we don't need to increment currentIndex because refreshViewCards handles it
+        if (activeView !== "unknown" && oldViewCardsLength === viewCards.length) {
+          // In "All" or "Mastered" mode, just go to next card
+          goToNextCard();
+        }
+        // In "Study" mode, refreshViewCards already adjusted currentIndex
+      }, 300);
     }
   }
 
@@ -317,15 +350,24 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     const card = viewCards[currentIndex];
     markCard(card.id, false);
     card.known = false;
+    
+    // Update visual feedback
     document.getElementById("fc-card").style.borderColor = "#ef5350";
     document.getElementById("fc-known-badge").style.display = "none";
     updateStats();
+    
     if (autoSkip) {
+      // Small delay to show the "Don't Know" visual feedback before auto-skipping
       setTimeout(() => {
-        refreshViewCards();
-        currentIndex = (currentIndex + 1) % Math.max(1, viewCards.length);
-        render();
-      }, 600);
+        if (currentIndex + 1 < viewCards.length) {
+          currentIndex++;
+          render();
+        } else {
+          // Wrap around to beginning
+          currentIndex = 0;
+          render();
+        }
+      }, 300);
     }
   }
 
@@ -360,8 +402,7 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     render();
   });
   document.getElementById("fc-next").addEventListener("click", () => {
-    currentIndex = (currentIndex + 1) % Math.max(1, viewCards.length);
-    render();
+    goToNextCard();
   });
   document.getElementById("fc-tab-all").addEventListener("click", () => setTab("all"));
   document.getElementById("fc-tab-unknown").addEventListener("click", () => setTab("unknown"));
@@ -376,9 +417,9 @@ function startFlashcardMode(cards, newlyAdded = 0) {
       btn.style.borderColor = "#5b6af0";
     } else {
       btn.textContent = "⏭ Auto-skip: OFF";
-      btn.style.background = "#fff";
-      btn.style.color = "#888";
-      btn.style.borderColor = "#ccc";
+      btn.style.background = t.btnBg;
+      btn.style.color = t.hint;
+      btn.style.borderColor = t.btnBorder;
     }
   });
   document.getElementById("fc-clear-deck").addEventListener("click", () => {
@@ -408,8 +449,7 @@ function startFlashcardMode(cards, newlyAdded = 0) {
       return;
     }
     if (e.key === "ArrowRight") {
-      currentIndex = (currentIndex + 1) % Math.max(1, viewCards.length);
-      render();
+      goToNextCard();
     } else if (e.key === "ArrowLeft") {
       currentIndex = (currentIndex - 1 + viewCards.length) % Math.max(1, viewCards.length);
       render();

@@ -1,5 +1,3 @@
-// main.js - Fixed version
-
 // Main application entry point
 import { storage } from './storage.js';
 import { initChat, sendMessage, addMessage, setCurrentMode, getCurrentMode, getCurrentScenario, setCurrentScenario, loadChatHistory } from './chat.js';
