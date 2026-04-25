@@ -11,6 +11,7 @@ import {
   loadChatHistory,
 } from "./chat.js";
 import { initFlashcards } from "./flashcards.js";
+import { startListeningPractice } from './listening.js';
 
 // DOM Elements
 const languageSelect = document.getElementById("language-select");
@@ -26,6 +27,16 @@ const modeButtons = {
   roleplay: document.getElementById("mode-roleplay"),
 };
 const roleplaySelect = document.getElementById("roleplay-scenario");
+
+// Initialize listening practice button
+const listenBtn = document.getElementById("listen-practice-btn");
+if (listenBtn) {
+  listenBtn.addEventListener("click", startListeningPractice);
+  console.log("✅ Listening practice button initialized");
+} else {
+  console.warn("⚠️ Listening practice button not found");
+}
+
 
 // Global state
 export let autoReadEnabled = true;

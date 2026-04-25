@@ -317,7 +317,13 @@ userInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") sendMessage();
 });
 
+
 micBtn.addEventListener("click", () => {
+  // If listening practice is active, let listening.js handle it
+  if (window.listeningPracticeActive) {
+    return; // Don't process here, let listening.js handle it
+  }
+  
   if (!recognition) return alert("Speech recognition not supported in this browser");
   const targetLanguage = document.getElementById("language-select").value;
   recognition.lang = langMap[targetLanguage] || "en-US";
