@@ -1,3 +1,4 @@
+import { storage } from './storage.js';
 import { autoReadEnabled, conversationHistory, setMode } from './main.js';
 
 const chatWindow = document.getElementById("chat-window");
@@ -205,11 +206,11 @@ function saveChatHistory() {
     });
   });
 
-  localStorage.setItem("chatHistory", JSON.stringify(messages));
+  storage.setItem("chatHistory", JSON.stringify(messages));
 }
 
 export function loadChatHistory() {
-  const saved = localStorage.getItem("chatHistory");
+  const saved = storage.getItem("chatHistory");
   if (!saved) return;
 
   const messages = JSON.parse(saved);

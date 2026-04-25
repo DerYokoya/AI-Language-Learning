@@ -1,3 +1,4 @@
+import { storage } from './storage.js';
 import { addMessage, stripMarkdown } from './chat.js';
 import { conversationHistory } from './main.js';
 
@@ -6,7 +7,7 @@ let currentFlashcardOverlay = null;
 // Storage helpers
 export function loadSavedCards() {
   try {
-    const raw = localStorage.getItem("fc_cards");
+    const raw = storage.getItem("fc_cards");
     return raw ? JSON.parse(raw) : [];
   } catch (e) {
     return [];
@@ -14,7 +15,7 @@ export function loadSavedCards() {
 }
 
 function saveCards(cards) {
-  localStorage.setItem("fc_cards", JSON.stringify(cards));
+  storage.setItem("fc_cards", JSON.stringify(cards));
 }
 
 export function markCard(id, known) {
