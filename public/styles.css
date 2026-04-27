@@ -428,3 +428,9 @@ body.dark .message.system-success {
   cursor: pointer;
   font-size: 14px;
 }
+
+.roleplay-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}

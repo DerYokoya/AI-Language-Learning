@@ -11,7 +11,7 @@ import {
   loadChatHistory,
 } from "./chat.js";
 import { initFlashcards } from "./flashcards.js";
-import { startListeningPractice } from './listening.js';
+import { startListeningPractice } from "./listening.js";
 
 // DOM Elements
 const languageSelect = document.getElementById("language-select");
@@ -36,7 +36,6 @@ if (listenBtn) {
 } else {
   console.warn("⚠️ Listening practice button not found");
 }
-
 
 // Global state
 export let autoReadEnabled = true;
@@ -148,9 +147,9 @@ export async function generateRoleplayIntro(
 // Mode switching
 export function setMode(mode, suppressMessage = false) {
   setCurrentMode(mode);
-  
+
   // Update button styles
-  Object.keys(modeButtons).forEach(key => {
+  Object.keys(modeButtons).forEach((key) => {
     const btn = modeButtons[key];
     if (btn) {
       if (key === mode) {
@@ -166,24 +165,31 @@ export function setMode(mode, suppressMessage = false) {
       }
     }
   });
-  
+
   // Show/hide roleplay dropdown
   if (roleplaySelect) {
-    roleplaySelect.style.display = mode === "roleplay" ? "inline-block" : "none";
+    const roleplayContainer = document.querySelector(".roleplay-container");
+
+    if (roleplayContainer) {
+      roleplayContainer.style.display = mode === "roleplay" ? "flex" : "none";
+    }
   }
-  
+
   // Send mode activation message (skip if suppressMessage is true)
   if (!suppressMessage) {
     const modeMessages = {
-      conversation: "💬 **Conversation Practice Mode** activated! Let's have a natural conversation. I'll correct you gently and ask follow-up questions.",
-      grammar: "📝 **Grammar Correction Mode** activated! I'll focus on fixing your sentences and explaining grammar rules. Try writing something!",
-      vocabulary: "📚 **Vocabulary Building Mode** activated! I'll teach you new words and phrases. What would you like to learn about?",
-      roleplay: `🎭 **Roleplay Mode** activated! Get ready to practice real-life scenarios!`
+      conversation:
+        "💬 **Conversation Practice Mode** activated! Let's have a natural conversation. I'll correct you gently and ask follow-up questions.",
+      grammar:
+        "📝 **Grammar Correction Mode** activated! I'll focus on fixing your sentences and explaining grammar rules. Try writing something!",
+      vocabulary:
+        "📚 **Vocabulary Building Mode** activated! I'll teach you new words and phrases. What would you like to learn about?",
+      roleplay: `🎭 **Roleplay Mode** activated! Get ready to practice real-life scenarios!`,
     };
-    
+
     addMessage(modeMessages[mode], "system-success");
   }
-  
+
   // Handle roleplay intro (only when not suppressed and mode is roleplay)
   if (mode === "roleplay" && !suppressMessage) {
     const scenario = getCurrentScenario();
@@ -300,13 +306,19 @@ if (roleplaySelect) {
   roleplaySelect.addEventListener("change", async (e) => {
     const newScenario = e.target.value;
     setCurrentScenario(newScenario);
-    
+
     if (getCurrentMode() === "roleplay") {
-      addMessage(`🎭 Scenario changed to: ${newScenario.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}`, "system-success");
-      
+      addMessage(
+        `🎭 Scenario changed to: ${newScenario
+          .replace(/([A-Z])/g, " $1")
+          .toLowerCase()
+          .trim()}`,
+        "system-success",
+      );
+
       const targetLanguage = document.getElementById("language-select").value;
       const difficulty = document.getElementById("difficulty-select").value;
-      
+
       await generateRoleplayIntro(newScenario, targetLanguage, difficulty);
     }
   });
