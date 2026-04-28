@@ -1,5 +1,5 @@
 import { storage } from './storage.js';
-import { autoReadEnabled, conversationHistory, setMode } from './main.js';
+import { autoReadEnabled, conversationHistory, setMode, saveCurrentChat } from './main.js';
 
 const chatWindow = document.getElementById("chat-window");
 const userInput = document.getElementById("user-input");
@@ -184,51 +184,34 @@ export function addMessage(text, sender) {
     conversationHistory.push({ sender, text });
   }
 
-  saveChatHistory();
+  saveCurrentChat();
 }
 
-function saveChatHistory() {
-  const messages = [];
-  const messageElements = document.querySelectorAll(".message");
+export function loadChatHistory(history = null) {
+  const messages = history || (() => {
+    const saved = storage.getItem("chatHistory");
+    if (!saved) return [];
+    try {
+      return JSON.parse(saved);
+    } catch (err) {
+      console.warn("Failed to parse legacy chat history", err);
+      return [];
+    }
+  })();
 
-  messageElements.forEach((msg) => {
-    let sender = "";
-    if (msg.classList.contains("user")) sender = "user";
-    else if (msg.classList.contains("ai")) sender = "ai";
-    else if (msg.classList.contains("system-error")) sender = "system-error";
-    else if (msg.classList.contains("system-success")) sender = "system-success";
-    else sender = "ai";
-
-    messages.push({
-      sender: sender,
-      text: msg.textContent || msg.innerText,
-      html: msg.innerHTML,
-    });
-  });
-
-  storage.setItem("chatHistory", JSON.stringify(messages));
-}
-
-export function loadChatHistory() {
-  const saved = storage.getItem("chatHistory");
-  if (!saved) return;
-
-  const messages = JSON.parse(saved);
   messages.forEach((m) => {
     const msg = document.createElement("div");
     msg.classList.add("message", m.sender);
-    msg.innerHTML = m.html;
+    msg.innerHTML = m.html || marked.parse(m.text || "");
     chatWindow.appendChild(msg);
 
     if (m.sender === "user" || m.sender === "ai") {
       conversationHistory.push({
         sender: m.sender,
-        text: m.text,
+        text: m.text || msg.textContent,
       });
     }
   });
-
-  chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
 function showTyping() {

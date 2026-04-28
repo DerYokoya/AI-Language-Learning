@@ -27,6 +27,148 @@ const modeButtons = {
   roleplay: document.getElementById("mode-roleplay"),
 };
 const roleplaySelect = document.getElementById("roleplay-scenario");
+const chatSelect = document.getElementById("chat-select");
+const newChatBtn = document.getElementById("new-chat-btn");
+const deleteChatBtn = document.getElementById("delete-chat-btn");
+
+export let currentChatId = null;
+export let currentChat = null;
+export let allChats = [];
+
+function saveChatSessions() {
+  storage.setItem("chatSessions", JSON.stringify(allChats));
+}
+
+function loadChatSessions() {
+  const raw = storage.getItem("chatSessions");
+  try {
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    console.warn("Failed to parse saved chat sessions", err);
+    return [];
+  }
+}
+
+function getChatById(id) {
+  return allChats.find((chat) => chat.id === id);
+}
+
+function updateChatSelect() {
+  if (!chatSelect) return;
+  const previous = chatSelect.value;
+  chatSelect.innerHTML = "";
+  allChats.forEach((chat) => {
+    const option = document.createElement("option");
+    option.value = chat.id;
+    option.textContent = chat.title || `Chat ${allChats.indexOf(chat) + 1}`;
+    if (chat.id === currentChatId) option.selected = true;
+    chatSelect.appendChild(option);
+  });
+  if (currentChatId) chatSelect.value = currentChatId;
+  else if (previous) chatSelect.value = previous;
+}
+
+export function saveCurrentChat() {
+  if (!currentChat) return;
+
+  currentChat.updatedAt = new Date().toISOString();
+  currentChat.language = languageSelect.value;
+  currentChat.difficulty = difficultySelect.value;
+  currentChat.mode = getCurrentMode();
+  currentChat.scenario = getCurrentScenario();
+  currentChat.autoReadEnabled = autoReadEnabled;
+
+  const chatMessages = [];
+  const messageElements = document.querySelectorAll(".message");
+
+  messageElements.forEach((msg) => {
+    let sender = "ai";
+    if (msg.classList.contains("user")) sender = "user";
+    else if (msg.classList.contains("system-error")) sender = "system-error";
+    else if (msg.classList.contains("system-success")) sender = "system-success";
+
+    chatMessages.push({
+      sender,
+      text: msg.textContent || msg.innerText || "",
+      html: msg.innerHTML,
+    });
+  });
+
+  currentChat.history = chatMessages;
+  saveChatSessions();
+}
+
+export function loadChatSession(chatId) {
+  if (!chatId) return;
+  if (currentChatId === chatId && currentChat) return;
+  if (currentChat) saveCurrentChat();
+
+  const nextChat = getChatById(chatId);
+  if (!nextChat) return;
+
+  currentChatId = nextChat.id;
+  currentChat = nextChat;
+  storage.setItem("currentChatId", currentChatId);
+  updateChatSelect();
+
+  const chatWindow = document.getElementById("chat-window");
+  if (chatWindow) chatWindow.innerHTML = "";
+
+  conversationHistory.length = 0;
+
+  if (currentChat.language) languageSelect.value = currentChat.language;
+  if (currentChat.difficulty) difficultySelect.value = currentChat.difficulty;
+  if (currentChat.scenario && roleplaySelect)
+    roleplaySelect.value = currentChat.scenario;
+
+  setCurrentScenario(currentChat.scenario || "restaurant");
+  setMode(currentChat.mode || "conversation", true);
+
+  autoReadEnabled = currentChat.autoReadEnabled !== false;
+  ttsToggleBtn.textContent = autoReadEnabled
+    ? "🔊 Auto-Read: ON"
+    : "🔇 Auto-Read: OFF";
+  ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
+
+  if (currentChat.history && currentChat.history.length) {
+    loadChatHistory(currentChat.history);
+  }
+}
+
+function createNewChat() {
+  const nextIndex = allChats.length + 1;
+  const chat = {
+    id: `chat-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    title: `Chat ${nextIndex}`,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    history: [],
+    mode: "conversation",
+    language: "Spanish",
+    difficulty: "Beginner",
+    scenario: "restaurant",
+    autoReadEnabled: true,
+    flashcards: {},
+  };
+
+  allChats.push(chat);
+  saveChatSessions();
+  updateChatSelect();
+  loadChatSession(chat.id);
+}
+
+function initializeChatSessions() {
+  allChats = loadChatSessions();
+  const savedChatId = storage.getItem("currentChatId");
+  if (!allChats.length) {
+    createNewChat();
+    return;
+  }
+
+  currentChatId = savedChatId && getChatById(savedChatId) ? savedChatId : allChats[0].id;
+  updateChatSelect();
+  loadChatSession(currentChatId);
+}
 
 // Initialize listening practice button
 const listenBtn = document.getElementById("listen-practice-btn");
@@ -222,29 +364,46 @@ function loadAllSettings() {
   const savedTTS = storage.getItem("autoReadEnabled");
   if (savedTTS !== null) {
     autoReadEnabled = savedTTS === "true";
-    ttsToggleBtn.textContent = autoReadEnabled
-      ? "🔊 Auto-Read: ON"
-      : "🔇 Auto-Read: OFF";
-    ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
   }
 
-  // Load saved mode without showing activation message (suppress true)
-  const savedMode = storage.getItem("selectedMode");
-  if (savedMode) {
-    setMode(savedMode, true); // suppressMessage = true
+  if (currentChat) {
+    if (currentChat.language) languageSelect.value = currentChat.language;
+    if (currentChat.difficulty) difficultySelect.value = currentChat.difficulty;
+    if (roleplaySelect && currentChat.scenario)
+      roleplaySelect.value = currentChat.scenario;
+
+    setCurrentScenario(currentChat.scenario || "restaurant");
+    setMode(currentChat.mode || "conversation", true);
+    autoReadEnabled = currentChat.autoReadEnabled !== false;
   } else {
-    // Set default mode without message
-    setMode("conversation", true);
+    const savedLang = storage.getItem("selectedLanguage");
+    if (savedLang) languageSelect.value = savedLang;
+
+    const savedDifficulty = storage.getItem("selectedDifficulty");
+    if (savedDifficulty) difficultySelect.value = savedDifficulty;
+
+    const savedMode = storage.getItem("selectedMode");
+    if (savedMode) {
+      setMode(savedMode, true);
+    } else {
+      setMode("conversation", true);
+    }
   }
+
+  ttsToggleBtn.textContent = autoReadEnabled
+    ? "🔊 Auto-Read: ON"
+    : "🔇 Auto-Read: OFF";
+  ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
 }
+
 
 // Save settings when they change
 languageSelect.addEventListener("change", () => {
-  storage.setItem("selectedLanguage", languageSelect.value);
+  saveCurrentChat();
 });
 
 difficultySelect.addEventListener("change", () => {
-  storage.setItem("selectedDifficulty", difficultySelect.value);
+  saveCurrentChat();
 });
 
 themeToggleBtn.addEventListener("click", () => {
@@ -261,6 +420,7 @@ ttsToggleBtn.addEventListener("click", () => {
     ? "🔊 Auto-Read: ON"
     : "🔇 Auto-Read: OFF";
   ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
+  saveCurrentChat();
 
   if (autoReadEnabled) {
     addMessage(
@@ -276,28 +436,28 @@ ttsToggleBtn.addEventListener("click", () => {
 if (modeButtons.conversation) {
   modeButtons.conversation.addEventListener("click", () => {
     setMode("conversation");
-    storage.setItem("selectedMode", "conversation");
+    saveCurrentChat();
   });
 }
 
 if (modeButtons.grammar) {
   modeButtons.grammar.addEventListener("click", () => {
     setMode("grammar");
-    storage.setItem("selectedMode", "grammar");
+    saveCurrentChat();
   });
 }
 
 if (modeButtons.vocabulary) {
   modeButtons.vocabulary.addEventListener("click", () => {
     setMode("vocabulary");
-    storage.setItem("selectedMode", "vocabulary");
+    saveCurrentChat();
   });
 }
 
 if (modeButtons.roleplay) {
   modeButtons.roleplay.addEventListener("click", () => {
     setMode("roleplay");
-    storage.setItem("selectedMode", "roleplay");
+    saveCurrentChat();
   });
 }
 
@@ -306,6 +466,7 @@ if (roleplaySelect) {
   roleplaySelect.addEventListener("change", async (e) => {
     const newScenario = e.target.value;
     setCurrentScenario(newScenario);
+    saveCurrentChat();
 
     if (getCurrentMode() === "roleplay") {
       addMessage(
@@ -324,15 +485,51 @@ if (roleplaySelect) {
   });
 }
 
+if (chatSelect) {
+  chatSelect.addEventListener("change", () => {
+    loadChatSession(chatSelect.value);
+  });
+}
+
+if (newChatBtn) {
+  newChatBtn.addEventListener("click", () => {
+    createNewChat();
+  });
+}
+
+if (deleteChatBtn) {
+  deleteChatBtn.addEventListener("click", () => {
+    if (!currentChat) return;
+    if (!confirm(`Delete chat '${currentChat.title || "Untitled"}'?`)) return;
+
+    const index = allChats.findIndex((chat) => chat.id === currentChatId);
+    if (index === -1) return;
+
+    allChats.splice(index, 1);
+    saveChatSessions();
+
+    if (!allChats.length) {
+      createNewChat();
+      return;
+    }
+
+    const nextChat = allChats[index] || allChats[index - 1];
+    loadChatSession(nextChat.id);
+  });
+}
+
 // Clear chat button
 const clearChatBtn = document.getElementById("clear-chat-btn");
 if (clearChatBtn) {
   clearChatBtn.addEventListener("click", () => {
-    if (confirm("Clear all chat history?")) {
+    if (confirm("Clear all chat history for this chat?")) {
       const chatWindow = document.getElementById("chat-window");
       chatWindow.innerHTML = "";
-      conversationHistory.length = 0; // Clear the array properly
-      storage.removeItem("chatHistory");
+      conversationHistory.length = 0;
+      if (currentChat) {
+        currentChat.history = [];
+        saveCurrentChat();
+      }
       addMessage(
         "Chat history cleared! Start a new conversation.",
         "system-success",
@@ -342,13 +539,7 @@ if (clearChatBtn) {
 }
 
 // Initialize app
-// Clear any existing conversation history on fresh load
-// Only if there are no messages in the chat window
-const chatWindow = document.getElementById("chat-window");
-if (chatWindow && chatWindow.children.length === 0) {
-  // Fresh load - don't add any system messages yet
-  loadChatHistory();
-}
+initializeChatSessions();
 initChat();
 initFlashcards();
 // Load settings last, which will add the mode message only once

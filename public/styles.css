@@ -178,13 +178,6 @@ body,
   width: 120px;
   height: auto;
 }
-.app-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
-
 #mic-btn {
   padding: 10px 14px;
   border: none;
