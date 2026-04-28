@@ -104,6 +104,11 @@ header button:hover,
   color: #1976d2;
 }
 
+#rename-chat-btn {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
 #delete-chat-btn {
   background: #ffebee;
   color: #c62828;

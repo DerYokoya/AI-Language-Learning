@@ -30,6 +30,7 @@ const roleplaySelect = document.getElementById("roleplay-scenario");
 const chatSelect = document.getElementById("chat-select");
 const newChatBtn = document.getElementById("new-chat-btn");
 const deleteChatBtn = document.getElementById("delete-chat-btn");
+const renameChatBtn = document.getElementById("rename-chat-btn");
 
 export let currentChatId = null;
 export let currentChat = null;
@@ -137,10 +138,10 @@ export function loadChatSession(chatId) {
 }
 
 function createNewChat() {
-  const nextIndex = allChats.length + 1;
+  const randomCode = generateRandomChatCode();
   const chat = {
     id: `chat-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    title: `Chat ${nextIndex}`,
+    title: `Chat ${randomCode}`,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     history: [],
@@ -156,6 +157,27 @@ function createNewChat() {
   saveChatSessions();
   updateChatSelect();
   loadChatSession(chat.id);
+}
+
+function renameCurrentChat() {
+  if (!currentChat) return;
+
+  const newTitle = prompt("Enter new chat name:", currentChat.title);
+  if (!newTitle || newTitle.trim() === "") return;
+
+  currentChat.title = newTitle.trim();
+  currentChat.updatedAt = new Date().toISOString();
+  saveChatSessions();
+  updateChatSelect();
+}
+
+function generateRandomChatCode() {
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const numbers = '0123456789';
+  const letter1 = letters[Math.floor(Math.random() * letters.length)];
+  const letter2 = letters[Math.floor(Math.random() * letters.length)];
+  const number = numbers[Math.floor(Math.random() * numbers.length)];
+  return `${letter1}${letter2}${number}`;
 }
 
 function initializeChatSessions() {
@@ -500,24 +522,9 @@ if (newChatBtn) {
   });
 }
 
-if (deleteChatBtn) {
-  deleteChatBtn.addEventListener("click", () => {
-    if (!currentChat) return;
-    if (!confirm(`Delete chat '${currentChat.title || "Untitled"}'?`)) return;
-
-    const index = allChats.findIndex((chat) => chat.id === currentChatId);
-    if (index === -1) return;
-
-    allChats.splice(index, 1);
-    saveChatSessions();
-
-    if (!allChats.length) {
-      createNewChat();
-      return;
-    }
-
-    const nextChat = allChats[index] || allChats[index - 1];
-    loadChatSession(nextChat.id);
+if (renameChatBtn) {
+  renameChatBtn.addEventListener("click", () => {
+    renameCurrentChat();
   });
 }
 
