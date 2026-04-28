@@ -314,7 +314,23 @@ header button:hover,
   100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0);}
 }
 
-#tts-toggle-btn.tts-off { background: #aaa; color: #eee;}
+/* Auto-read button - Light green when ON */
+#tts-toggle-btn {
+  background: #f0f2f5;
+  color: #1a1a1a;
+}
+
+#tts-toggle-btn.tts-off {
+  background: #aaa;
+  color: #eee;
+}
+
+#tts-toggle-btn.tts-on {
+  background: #90ee90;
+  color: #1a472a;
+  box-shadow: 0 0 8px rgba(144, 238, 144, 0.5);
+}
+
 #tts-stop-btn { background: #dc3545; color: white;}
 #tts-replay-btn { background: #6f42c1; color: white;}
 #listen-practice-btn { background: #20c997; color: white;}
@@ -382,13 +398,35 @@ body.dark .message.system-success {
   border-left-color: #4ade80;
 }
 
-body.dark .message th {
+body.dark .chat-session-bar {
   background: #2c2c3a;
-  color: #eee;
 }
-body.dark .message td {
-  background: #22222e;
-  border-color: #3a3a4a;
+
+body.dark .chat-select-wrap {
+  color: #ddd;
+}
+
+body.dark #chat-select {
+  background: #2a2a3a;
+  border-color: #444;
+  color: white;
+}
+
+/* Dark mode auto-read button */
+body.dark #tts-toggle-btn {
+  background: #2c2c3a;
+  color: #ddd;
+}
+
+body.dark #tts-toggle-btn.tts-off {
+  background: #555;
+  color: #aaa;
+}
+
+body.dark #tts-toggle-btn.tts-on {
+  background: #2d6a2d;
+  color: #c8ffc8;
+  box-shadow: 0 0 8px rgba(45, 106, 45, 0.5);
 }
 
 /* RESPONSIVE */

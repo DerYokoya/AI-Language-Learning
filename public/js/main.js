@@ -129,6 +129,7 @@ export function loadChatSession(chatId) {
     ? "🔊 Auto-Read: ON"
     : "🔇 Auto-Read: OFF";
   ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
+  ttsToggleBtn.classList.toggle("tts-on", autoReadEnabled);
 
   if (currentChat.history && currentChat.history.length) {
     loadChatHistory(currentChat.history);
@@ -394,6 +395,7 @@ function loadAllSettings() {
     ? "🔊 Auto-Read: ON"
     : "🔇 Auto-Read: OFF";
   ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
+  ttsToggleBtn.classList.toggle("tts-on", autoReadEnabled);
 }
 
 
@@ -420,6 +422,7 @@ ttsToggleBtn.addEventListener("click", () => {
     ? "🔊 Auto-Read: ON"
     : "🔇 Auto-Read: OFF";
   ttsToggleBtn.classList.toggle("tts-off", !autoReadEnabled);
+  ttsToggleBtn.classList.toggle("tts-on", autoReadEnabled);
   saveCurrentChat();
 
   if (autoReadEnabled) {
