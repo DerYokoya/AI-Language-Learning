@@ -237,7 +237,7 @@ header button:hover,
   font-size: 13px;
 }
 
-/* TABLES inside messages */
+/* Tables inside messages */
 .message table {
   width: 100%;
   border-collapse: collapse;
@@ -257,6 +257,39 @@ header button:hover,
 .message th {
   background: #f1f3f5;
   font-weight: 600;
+}
+
+/* Light mode - alternating row colors */
+.message tr:nth-child(even) td {
+  background: #f8f9fa;
+}
+
+/* Light mode - hover effect */
+.message tr:hover td {
+  background: #e9ecef;
+}
+
+/* Dark mode - table styles */
+body.dark .message th {
+  background: #2c2c3a;
+  color: #eef2ff;
+  border-color: #444;
+}
+
+body.dark .message td {
+  background: #252535;
+  color: #eef2ff;
+  border-color: #444;
+}
+
+/* Dark mode - alternating row colors */
+body.dark .message tr:nth-child(even) td {
+  background: #222232;
+}
+
+/* Dark mode - hover effect */
+body.dark .message tr:hover td {
+  background: #353548;
 }
 
 /* INPUT AREA */
