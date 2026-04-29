@@ -495,3 +495,215 @@ body.dark #tts-toggle-btn.tts-on {
     order: 2;
   }
 }
+
+/* ─── Auth Nav ─────────────────────────────────────────────────────────────── */
+#auth-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.auth-user-name {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-guest-label {
+  font-size: 0.75rem;
+  opacity: 0.55;
+  font-style: italic;
+}
+
+.auth-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.auth-btn-primary {
+  background: #5b6af0;
+  color: #fff;
+}
+.auth-btn-primary:hover { background: #4a59d8; }
+
+.auth-btn-ghost {
+  background: transparent;
+  color: var(--btn-text, #555);
+  border: 1px solid var(--border-color, #ccc);
+}
+.auth-btn-ghost:hover { background: var(--btn-bg, #f0f0f0); }
+
+/* ─── Auth Modal ───────────────────────────────────────────────────────────── */
+#auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn .15s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+.auth-modal {
+  background: var(--bg, #fff);
+  color: var(--text-color, #1a1a2e);
+  border-radius: 12px;
+  padding: 32px 28px 24px;
+  width: min(420px, 94vw);
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  animation: slideUp .2s ease;
+}
+
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+
+.auth-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  opacity: 0.5;
+  color: inherit;
+  line-height: 1;
+  padding: 4px;
+}
+.auth-modal-close:hover { opacity: 1; }
+
+.auth-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--border-color, #e0e0e0);
+  margin-bottom: 22px;
+}
+
+.auth-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 8px 0 10px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-color, #555);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color .15s, border-color .15s;
+}
+.auth-tab.active {
+  color: #5b6af0;
+  border-bottom-color: #5b6af0;
+}
+
+.auth-heading {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 18px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.auth-form input {
+  padding: 9px 12px;
+  border-radius: 7px;
+  border: 1.5px solid var(--border-color, #d0d0d0);
+  font-size: 0.95rem;
+  background: var(--input-bg, #f9f9fb);
+  color: var(--text-color, #1a1a2e);
+  transition: border-color .15s;
+}
+.auth-form input:focus {
+  outline: none;
+  border-color: #5b6af0;
+}
+
+.auth-optional {
+  font-weight: 400;
+  opacity: 0.55;
+  font-size: 0.8rem;
+}
+
+.auth-error {
+  font-size: 0.82rem;
+  color: #d94040;
+  margin: 0;
+  background: #fff0f0;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid #ffd0d0;
+}
+
+.auth-submit {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  margin-top: 4px;
+}
+.auth-submit:disabled { opacity: 0.65; cursor: not-allowed; }
+
+.auth-switch {
+  text-align: center;
+  font-size: 0.83rem;
+  margin: 0;
+  opacity: 0.7;
+}
+.auth-switch a { color: #5b6af0; text-decoration: none; }
+.auth-switch a:hover { text-decoration: underline; }
+
+.auth-divider {
+  border: none;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+  margin: 4px 0;
+}
+
+.auth-guest-btn {
+  width: 100%;
+  text-align: center;
+}
+
+/* Dark mode overrides */
+body.dark .auth-modal {
+  background: #1e1e2e;
+  color: #e0e0ef;
+}
+body.dark .auth-form input {
+  background: #2a2a3e;
+  border-color: #3a3a5e;
+  color: #e0e0ef;
+}
+body.dark .auth-error {
+  background: #3a1a1a;
+  border-color: #8b2020;
+  color: #ff9090;
+}
+body.dark .auth-btn-ghost {
+  color: #c0c0d0;
+  border-color: #3a3a5e;
+}
+body.dark .auth-btn-ghost:hover { background: #2a2a3e; }

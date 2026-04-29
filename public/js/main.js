@@ -1,5 +1,6 @@
 // Main application entry point
 import { storage } from "./storage.js";
+import { appStorage } from "./appStorage.js";
 import {
   initChat,
   sendMessage,
@@ -554,3 +555,16 @@ initChat();
 initFlashcards();
 // Load settings last, which will add the mode message only once
 loadAllSettings();
+
+// ─── Guest → Account migration ──────────────────────────────────────────────
+// When a guest signs up or logs in, migrate their localStorage data to the server
+document.addEventListener("authchange", async (e) => {
+  if (e.detail?.wasGuest && e.detail?.user) {
+    try {
+      await appStorage.migrateGuestDataToServer();
+      console.info("✅ Guest data migrated to account");
+    } catch (err) {
+      console.warn("Migration failed:", err);
+    }
+  }
+});

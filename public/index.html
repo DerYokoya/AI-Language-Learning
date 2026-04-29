@@ -12,6 +12,8 @@
         <div class="logo-container">
           <img src="logo.svg" alt="LL Logo" class="logo" />
         </div>
+        <!-- Auth nav is injected here by auth.js -->
+        <div id="auth-nav"></div>
         <br />
         <button id="listen-practice-btn">🎧 Listening Practice</button>
         <button id="flashcard-btn">📇 Generate Flashcards</button>
@@ -88,6 +90,12 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script type="module" src="/js/main.js"></script>
+    <script type="module">
+      import { initAuth } from "/js/auth.js";
+      // Auth must resolve before main so window.currentUser is set
+      await initAuth();
+      // Dynamic import ensures main.js runs after auth state is known
+      await import("/js/main.js");
+    </script>
   </body>
 </html>
