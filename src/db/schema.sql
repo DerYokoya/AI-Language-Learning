@@ -1,7 +1,3 @@
--- AI Language Learning — Full Database Schema
--- Run once: psql $DATABASE_URL -f src/db/schema.sql
-
--- ─── Users ───────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS users (
   id            SERIAL PRIMARY KEY,
   email         TEXT UNIQUE NOT NULL,
@@ -10,8 +6,6 @@ CREATE TABLE IF NOT EXISTS users (
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ─── Refresh Tokens ──────────────────────────────────────────────────────────
--- Used for silent token renewal (access token = 15 min, refresh = 30 days)
 CREATE TABLE IF NOT EXISTS refresh_tokens (
   id         SERIAL PRIMARY KEY,
   user_id    INT  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -21,18 +15,15 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 );
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
 
--- ─── User Settings ───────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS user_settings (
-  user_id          INT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  theme            TEXT    DEFAULT 'light',
-  language         TEXT    DEFAULT 'Spanish',
-  difficulty       TEXT    DEFAULT 'Beginner',
+  user_id           INT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  theme             TEXT    DEFAULT 'light',
+  language          TEXT    DEFAULT 'Spanish',
+  difficulty        TEXT    DEFAULT 'Beginner',
   auto_read_enabled BOOLEAN DEFAULT TRUE,
-  updated_at       TIMESTAMPTZ DEFAULT NOW()
+  updated_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ─── Key–Value Storage ───────────────────────────────────────────────────────
--- Generic per-user persistence (replaces localStorage for logged-in users)
 CREATE TABLE IF NOT EXISTS user_storage (
   user_id    INT  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   key        TEXT NOT NULL,
@@ -41,7 +32,6 @@ CREATE TABLE IF NOT EXISTS user_storage (
   PRIMARY KEY (user_id, key)
 );
 
--- ─── Chat Sessions ───────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS chats (
   id                SERIAL PRIMARY KEY,
   user_id           INT  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -56,18 +46,16 @@ CREATE TABLE IF NOT EXISTS chats (
 );
 CREATE INDEX IF NOT EXISTS idx_chats_user ON chats(user_id);
 
--- ─── Chat Messages ───────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS chat_messages (
   id         SERIAL PRIMARY KEY,
   chat_id    INT  NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
-  sender     TEXT NOT NULL,          -- 'user' | 'ai' | 'system-success' | 'system-error'
+  sender     TEXT NOT NULL,
   text       TEXT,
   html       TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_chat_messages_chat ON chat_messages(chat_id);
 
--- ─── Flashcards ──────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS flashcards (
   id           SERIAL PRIMARY KEY,
   user_id      INT  NOT NULL REFERENCES users(id) ON DELETE CASCADE,

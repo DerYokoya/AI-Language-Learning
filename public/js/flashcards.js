@@ -1,30 +1,30 @@
-import { storage } from './storage.js';
+import { appStorage } from './appStorage.js';
 import { addMessage, stripMarkdown } from './chat.js';
 import { conversationHistory } from './main.js';
 
 let currentFlashcardOverlay = null;
 
 // Storage helpers
-export function loadSavedCards() {
+export async function loadSavedCards() {
   try {
-    const raw = storage.getItem("fc_cards");
+    const raw = await appStorage.getItem("fc_cards");
     return raw ? JSON.parse(raw) : [];
   } catch (e) {
     return [];
   }
 }
 
-function saveCards(cards) {
-  storage.setItem("fc_cards", JSON.stringify(cards));
+async function saveCards(cards) {
+  await appStorage.setItem("fc_cards", JSON.stringify(cards));
 }
 
-export function markCard(id, known) {
-  const cards = loadSavedCards();
+export async function markCard(id, known) {
+  const cards = await loadSavedCards();
   const card = cards.find((c) => c.id === id);
   if (card) {
     card.known = known;
     card.reviewCount = (card.reviewCount || 0) + 1;
-    saveCards(cards);
+    await saveCards(cards);
   }
 }
 
@@ -35,8 +35,8 @@ export function getStats(cards) {
   return { total, known, unknown };
 }
 
-function mergeNewCards(newCards, language, difficulty) {
-  const existing = loadSavedCards();
+async function mergeNewCards(newCards, language, difficulty) {
+  const existing = await loadSavedCards();
   let added = 0;
 
   newCards.forEach((nc) => {
@@ -58,7 +58,7 @@ function mergeNewCards(newCards, language, difficulty) {
     }
   });
 
-  saveCards(existing);
+  await saveCards(existing);
   return { all: existing, added };
 }
 
@@ -121,7 +121,7 @@ async function generateFlashcards() {
 
   const data = await response.json();
   const newCards = parseFlashcards(data.reply);
-  const { all: allCards, added } = mergeNewCards(newCards, targetLanguage, difficulty);
+  const { all: allCards, added } = await mergeNewCards(newCards, targetLanguage, difficulty);
 
   const langCards = allCards
     .filter((c) => c.language === targetLanguage)
@@ -236,8 +236,8 @@ function startFlashcardMode(cards, newlyAdded = 0) {
   document.body.appendChild(overlay);
   currentFlashcardOverlay = overlay;
 
-  function getViewCards() {
-    const all = loadSavedCards().filter(
+  async function getViewCards() {
+    const all = (await loadSavedCards()).filter(
       (c) => c.language === document.getElementById("language-select").value
     );
     if (activeView === "unknown") return all.filter((c) => !c.known);
@@ -245,8 +245,8 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     return all;
   }
 
-  function refreshViewCards() {
-    viewCards = getViewCards();
+  async function refreshViewCards() {
+    viewCards = await getViewCards();
     if (currentIndex >= viewCards.length) currentIndex = Math.max(0, viewCards.length - 1);
     if (viewCards.length === 0) {
       document.getElementById("fc-text").textContent =
@@ -258,22 +258,22 @@ function startFlashcardMode(cards, newlyAdded = 0) {
       document.getElementById("fc-hint").textContent = "";
       document.getElementById("fc-known-badge").style.display = "none";
       document.getElementById("fc-progress-bar").style.width = "0%";
-      updateStats();
+      await updateStats();
     } else {
       render();
     }
   }
 
-  function updateStats() {
-    const allLang = loadSavedCards().filter((c) => c.language === document.getElementById("language-select").value);
+  async function updateStats() {
+    const allLang = (await loadSavedCards()).filter((c) => c.language === document.getElementById("language-select").value);
     const s = getStats(allLang);
     document.getElementById("fc-stats").textContent = `✓ ${s.known} / ${s.total}`;
     const pct = s.total > 0 ? (s.known / s.total) * 100 : 0;
     document.getElementById("fc-progress-bar").style.width = pct + "%";
   }
 
-  function render() {
-    if (!viewCards.length) { refreshViewCards(); return; }
+  async function render() {
+    if (!viewCards.length) { await refreshViewCards(); return; }
     const card = viewCards[currentIndex];
     flipped = false;
     document.getElementById("fc-text").textContent = card.front;
@@ -283,7 +283,7 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     document.getElementById("fc-counter").textContent = `Card ${currentIndex + 1} of ${viewCards.length}`;
     const badge = document.getElementById("fc-known-badge");
     badge.style.display = card.known ? "inline-block" : "none";
-    updateStats();
+    await updateStats();
   }
 
   function doFlip() {
@@ -295,83 +295,64 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     document.getElementById("fc-hint").textContent = flipped ? "Back side" : "Click the card to flip • Space or Enter to flip";
   }
 
-  function goToNextCard() {
+  async function goToNextCard() {
     if (viewCards.length === 0) return;
-    
-    // Move to next card
     if (currentIndex + 1 < viewCards.length) {
       currentIndex++;
-      render();
-    } else if (currentIndex + 1 >= viewCards.length) {
-      // Reached the end, wrap around or show completion message
+      await render();
+    } else {
       if (activeView === "unknown" && viewCards.length > 0) {
-        // Check if there are any unknown cards left
         const remainingUnknown = viewCards.filter(c => !c.known).length;
         if (remainingUnknown === 0) {
           addMessage("🎉 Congratulations! You've mastered all cards in this session!", "system-success");
         }
       }
       currentIndex = 0;
-      render();
+      await render();
     }
   }
 
-  function doKnown() {
+  async function doKnown() {
     if (!viewCards.length) return;
     const card = viewCards[currentIndex];
-    markCard(card.id, true);
+    await markCard(card.id, true);
     card.known = true;
-    
-    // Update visual feedback
     document.getElementById("fc-card").style.borderColor = "#4caf50";
     document.getElementById("fc-known-badge").style.display = "inline-block";
-    updateStats();
-    
+    await updateStats();
     if (autoSkip) {
-      // Small delay to show the "Known" visual feedback before auto-skipping
-      setTimeout(() => {
-        // Refresh the view cards (in case the view filters out known cards)
-        const oldViewCardsLength = viewCards.length;
-        refreshViewCards();
-        
-        // If the current card was removed from view (e.g., in "Study" mode), 
-        // we don't need to increment currentIndex because refreshViewCards handles it
-        if (activeView !== "unknown" && oldViewCardsLength === viewCards.length) {
-          // In "All" or "Mastered" mode, just go to next card
-          goToNextCard();
+      setTimeout(async () => {
+        const oldLen = viewCards.length;
+        await refreshViewCards();
+        if (activeView !== "unknown" && oldLen === viewCards.length) {
+          await goToNextCard();
         }
-        // In "Study" mode, refreshViewCards already adjusted currentIndex
       }, 300);
     }
   }
 
-  function doUnknown() {
+  async function doUnknown() {
     if (!viewCards.length) return;
     const card = viewCards[currentIndex];
-    markCard(card.id, false);
+    await markCard(card.id, false);
     card.known = false;
-    
-    // Update visual feedback
     document.getElementById("fc-card").style.borderColor = "#ef5350";
     document.getElementById("fc-known-badge").style.display = "none";
-    updateStats();
-    
+    await updateStats();
     if (autoSkip) {
-      // Small delay to show the "Don't Know" visual feedback before auto-skipping
-      setTimeout(() => {
+      setTimeout(async () => {
         if (currentIndex + 1 < viewCards.length) {
           currentIndex++;
-          render();
+          await render();
         } else {
-          // Wrap around to beginning
           currentIndex = 0;
-          render();
+          await render();
         }
       }, 300);
     }
   }
 
-  function setTab(tab) {
+  async function setTab(tab) {
     activeView = tab;
     currentIndex = 0;
     ["all", "unknown", "known"].forEach((tabId) => {
@@ -387,7 +368,7 @@ function startFlashcardMode(cards, newlyAdded = 0) {
         btn.style.borderColor = t.tabInactBdr;
       }
     });
-    refreshViewCards();
+    await refreshViewCards();
   }
 
   render();
@@ -422,13 +403,13 @@ function startFlashcardMode(cards, newlyAdded = 0) {
       btn.style.borderColor = t.btnBorder;
     }
   });
-  document.getElementById("fc-clear-deck").addEventListener("click", () => {
+  document.getElementById("fc-clear-deck").addEventListener("click", async () => {
     const lang = document.getElementById("language-select").value;
     if (confirm(`Clear ALL saved ${lang} flashcards? This cannot be undone.`)) {
-      const remaining = loadSavedCards().filter((c) => c.language !== lang);
-      saveCards(remaining);
+      const remaining = (await loadSavedCards()).filter((c) => c.language !== lang);
+      await saveCards(remaining);
       currentIndex = 0;
-      refreshViewCards();
+      await refreshViewCards();
     }
   });
   document.getElementById("fc-close").addEventListener("click", () => overlay.remove());
