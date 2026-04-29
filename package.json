@@ -8,9 +8,13 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.1",
     "express": "^5.2.1",
-    "openai": "^4.0.0"
+    "jsonwebtoken": "^9.0.3",
+    "openai": "^4.0.0",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
