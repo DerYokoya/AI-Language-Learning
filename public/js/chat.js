@@ -1,5 +1,5 @@
 import { storage } from './storage.js';
-import { autoReadEnabled, conversationHistory, setMode, saveCurrentChat } from './main.js';
+import { autoReadEnabled, conversationHistory, setMode, saveCurrentChat, persistMessage } from './main.js';
 
 const chatWindow = document.getElementById("chat-window");
 const userInput = document.getElementById("user-input");
@@ -182,6 +182,7 @@ export function addMessage(text, sender) {
 
   if (sender === "user" || sender === "ai") {
     conversationHistory.push({ sender, text });
+    persistMessage(sender, text, msg.innerHTML);
   }
 
   saveCurrentChat();

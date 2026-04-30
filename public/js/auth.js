@@ -8,7 +8,7 @@
 let _resolveReady;
 export const authReady = new Promise(r => { _resolveReady = r; });
 
-let _wasGuest = false; // track if user was a guest before signing in
+let _sessionHadAccount = false; // true once any login has happened this session
 
 // ─── Token refresh ────────────────────────────────────────────────────────────
 let _refreshTimer = null;
@@ -37,11 +37,18 @@ async function silentRefresh() {
 }
 
 // ─── Current user ─────────────────────────────────────────────────────────────
+let _wasLoggedIn = false; // was the user actually logged in before this change?
+
 function setCurrentUser(user) {
-  const wasGuest = !window.currentUser && _wasGuest;
+  const wasLoggedIn = !!window.currentUser;
   window.currentUser = user || null;
-  if (!user) _wasGuest = true; // mark that we were a guest
-  document.dispatchEvent(new CustomEvent("authchange", { detail: { user, wasGuest: wasGuest && !!user } }));
+
+  const justLoggedIn = !wasLoggedIn && !!user;
+  // Only "wasGuest" if logging in for the first time with no prior account this session
+  const wasGuest = justLoggedIn && !_sessionHadAccount;
+  if (user) _sessionHadAccount = true;
+
+  document.dispatchEvent(new CustomEvent("authchange", { detail: { user, wasGuest, justLoggedIn } }));
   updateNav();
 }
 
