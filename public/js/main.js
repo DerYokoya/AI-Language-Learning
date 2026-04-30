@@ -13,22 +13,10 @@ import {
 import { initFlashcards } from "./flashcards.js";
 import { startListeningPractice } from "./listening.js";
 
-// ─── Auth bootstrap ───────────────────────────────────────────────────────────
-// Fetch the logged-in user on every page load and expose it as window.currentUser.
-// This must complete before initializeChatSessions() runs so the chat loader
-// knows whether to hit the API or fall back to localStorage.
-async function bootstrapUser() {
-  try {
-    const res = await fetch("/api/users/me", { credentials: "include" });
-    if (res.ok) {
-      window.currentUser = await res.json(); // e.g. { email: "…" }
-    } else {
-      window.currentUser = null;
-    }
-  } catch {
-    window.currentUser = null;
-  }
-}
+// ─── Auth bootstrap ────────────────────────────────────────────────────────────
+// window.currentUser is set by auth.js before main.js is imported (index.html).
+// Do NOT fetch it again here — auth.js fires "authchange" events instead.
+
 
 // ─── Server-side chat API helpers ─────────────────────────────────────────────
 async function apiFetchChats() {
@@ -132,17 +120,20 @@ function loadChatSessionsLocal() {
 
 // Unified save — uses API when logged in, localStorage otherwise
 function saveChatSessions() {
-  if (window.currentUser) {
-    // Server is source of truth; local copy kept in sync for fast UI reads
-    saveChatSessionsLocal();
-    // Persist chat metadata to the server (fire-and-forget)
-    if (currentChat) {
-      apiUpdateChat(currentChat).catch((e) =>
-        console.warn("Failed to sync chat metadata to server:", e),
-      );
+  saveChatSessionsLocal(); // always keep local cache in sync
+
+  if (window.currentUser && currentChat) {
+    // Guard: only call the server if the chat id is a clean server-assigned
+    // integer string (e.g. "42").  A leftover guest id like
+    // "chat-177…" would crash PostgreSQL with "invalid input syntax for integer".
+    const idIsServerInteger = /^\d+$/.test(String(currentChat.id));
+    if (!idIsServerInteger) {
+      console.warn("saveChatSessions: skipping API call — id is not a server integer:", currentChat.id);
+      return;
     }
-  } else {
-    saveChatSessionsLocal();
+    apiUpdateChat(currentChat).catch((e) =>
+      console.warn("Failed to sync chat metadata to server:", e)
+    );
   }
 }
 
@@ -168,12 +159,6 @@ function updateChatSelect() {
 export function saveCurrentChat() {
   if (!currentChat) return;
 
-  if (!window.currentUser && currentChat.id.startsWith("chat-")) {
-    // guest mode — do NOT sync to server
-    saveChatSessionsLocal();
-    return;
-  }
-
   currentChat.updatedAt = new Date().toISOString();
   currentChat.language = languageSelect.value;
   currentChat.difficulty = difficultySelect.value;
@@ -188,8 +173,7 @@ export function saveCurrentChat() {
     let sender = "ai";
     if (msg.classList.contains("user")) sender = "user";
     else if (msg.classList.contains("system-error")) sender = "system-error";
-    else if (msg.classList.contains("system-success"))
-      sender = "system-success";
+    else if (msg.classList.contains("system-success")) sender = "system-success";
 
     chatMessages.push({
       sender,
@@ -208,6 +192,11 @@ export function saveCurrentChat() {
 export async function persistMessage(sender, text, html) {
   if (!window.currentUser || !currentChat) return;
   if (sender !== "user" && sender !== "ai") return;
+  // Guard: never send a guest string-id to the server — it would crash PostgreSQL.
+  if (!/^\d+$/.test(String(currentChat.id))) {
+    console.warn("persistMessage: skipping — id is not a server integer:", currentChat.id);
+    return;
+  }
   try {
     await apiAddMessage(currentChat.id, { sender, text, html });
   } catch (e) {
@@ -223,9 +212,9 @@ export async function loadChatSession(chatId) {
   const nextChat = getChatById(chatId);
   if (!nextChat) return;
 
-  currentChatId = nextChat.id; // always a server integer string at this point
+  currentChatId = nextChat.id;  // always a server integer string at this point
   currentChat = nextChat;
-  storage.setItem("currentChatId", currentChatId); // safe to persist now
+  storage.setItem("currentChatId", currentChatId);  // safe to persist now
   updateChatSelect();
 
   const chatWindow = document.getElementById("chat-window");
@@ -260,10 +249,7 @@ export async function loadChatSession(chatId) {
       currentChat.history = history;
       if (history.length) loadChatHistory(history);
     } catch (e) {
-      console.warn(
-        "Could not load messages from server, using local cache:",
-        e,
-      );
+      console.warn("Could not load messages from server, using local cache:", e);
       if (currentChat.history && currentChat.history.length)
         loadChatHistory(currentChat.history);
     }
@@ -320,8 +306,8 @@ function renameCurrentChat() {
 }
 
 function generateRandomChatCode() {
-  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const numbers = "0123456789";
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const numbers = '0123456789';
   const letter1 = letters[Math.floor(Math.random() * letters.length)];
   const letter2 = letters[Math.floor(Math.random() * letters.length)];
   const number = numbers[Math.floor(Math.random() * numbers.length)];
@@ -333,12 +319,8 @@ async function initializeChatSessions() {
     // Logged in — load chats from the server (source of truth).
     try {
       const serverChats = await apiFetchChats();
-      // Remove any guest chats with string IDs like "chat-..."
-      allChats = allChats.filter((c) => !c.id.startsWith("chat-"));
-      saveChatSessionsLocal();
-
       allChats = serverChats.map((row) => ({
-        id: String(row.id), // always a numeric string like "42"
+        id: String(row.id),          // always a numeric string like "42"
         title: row.title,
         mode: row.mode || "conversation",
         language: row.language || "Spanish",
@@ -347,19 +329,15 @@ async function initializeChatSessions() {
         autoReadEnabled: row.auto_read_enabled !== false,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
-        history: [], // messages loaded lazily in loadChatSession
+        history: [],                 // messages loaded lazily in loadChatSession
         flashcards: {},
       }));
-      allChats = allChats.filter((c) => !c.id.startsWith("chat-"));
       // Overwrite any stale localStorage data (which may still hold old
       // temporary string ids like "chat-177…") with the canonical server ids.
       storage.removeItem("currentChatId");
       saveChatSessionsLocal();
     } catch (e) {
-      console.warn(
-        "Could not fetch chats from server, falling back to localStorage:",
-        e,
-      );
+      console.warn("Could not fetch chats from server, falling back to localStorage:", e);
       allChats = loadChatSessionsLocal();
     }
   } else {
@@ -607,6 +585,7 @@ function loadAllSettings() {
   ttsToggleBtn.classList.toggle("tts-on", autoReadEnabled);
 }
 
+
 // Save settings when they change
 languageSelect.addEventListener("change", () => {
   saveCurrentChat();
@@ -721,9 +700,7 @@ if (deleteChatBtn) {
     if (!confirm(`Delete "${currentChat.title}"?`)) return;
 
     if (window.currentUser) {
-      try {
-        await apiDeleteChat(currentChat.id);
-      } catch (e) {
+      try { await apiDeleteChat(currentChat.id); } catch (e) {
         console.warn("Failed to delete chat on server:", e);
       }
     }
@@ -763,10 +740,53 @@ if (clearChatBtn) {
   });
 }
 
-// Initialize app — bootstrap user FIRST so initializeChatSessions knows
-// whether to use the server API or fall back to localStorage.
+// ─── Auth-aware initialization ───────────────────────────────────────────────
+// auth.js dispatches "authchange" whenever the user logs in, logs out, or the
+// token silently refreshes.  We reinitialize the chat session on every real
+// login/logout transition so guest IDs never bleed into authenticated requests
+// (and vice-versa).
+function resetChatState() {
+  // Tear down any in-memory state that belongs to the previous session.
+  currentChat    = null;
+  currentChatId  = null;
+  allChats       = [];
+  conversationHistory.length = 0;
+  const chatWindow = document.getElementById("chat-window");
+  if (chatWindow) chatWindow.innerHTML = "";
+}
+
+document.addEventListener("authchange", async ({ detail: { justLoggedIn, wasGuest, user } }) => {
+  const loggedOut = !user;
+
+  if (loggedOut) {
+    // User signed out — wipe account data and start a fresh guest session.
+    storage.removeItem("currentChatId");
+    storage.removeItem("chatSessions");
+    resetChatState();
+    await initializeChatSessions();
+    loadAllSettings();
+    return;
+  }
+
+  if (justLoggedIn) {
+    // User just signed in (possibly switching from a guest session).
+    // Discard any guest IDs before touching the server.
+    storage.removeItem("currentChatId");
+    if (wasGuest) {
+      // Don't carry guest chats over — clear local cache entirely.
+      storage.removeItem("chatSessions");
+    }
+    resetChatState();
+    await initializeChatSessions();
+    loadAllSettings();
+  }
+  // If it's just a silent token refresh (justLoggedIn === false, user !== null)
+  // we do nothing — the session is already correctly loaded.
+});
+
+// First load — auth.js has already set window.currentUser before this module
+// runs (index.html awaits initAuth() then dynamically imports main.js).
 (async () => {
-  await bootstrapUser();
   await initializeChatSessions();
   initChat();
   initFlashcards();
