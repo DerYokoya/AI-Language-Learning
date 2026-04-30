@@ -6,8 +6,10 @@
 body {
   margin: 0;
   background: #f0f2f5;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  transition: background 0.2s ease, color 0.2s ease;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
 .app-wrapper {
@@ -202,17 +204,34 @@ header button:hover,
   animation: blink 1.4s infinite both;
 }
 
-.typing-dot:nth-child(2) { animation-delay: 0.2s; }
-.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 @keyframes blink {
-  0%, 100% { opacity: 0.2; transform: scale(0.9);}
-  50% { opacity: 1; transform: scale(1);}
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px);}
-  to { opacity: 1; transform: translateY(0);}
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* SYSTEM MESSAGES */
@@ -340,16 +359,37 @@ body.dark .message tr:hover td {
   gap: 6px;
 }
 
-#send-btn { background: #0078ff; color: white; box-shadow: 0 2px 6px rgba(0,120,255,0.2);}
-#send-btn:hover { background: #0066dd; transform: scale(0.98);}
+#send-btn {
+  background: #0078ff;
+  color: white;
+  box-shadow: 0 2px 6px rgba(0, 120, 255, 0.2);
+}
+#send-btn:hover {
+  background: #0066dd;
+  transform: scale(0.98);
+}
 
-#mic-btn { background: #f0f2f5; font-size: 18px; padding: 8px 16px;}
-#mic-btn.recording { background: #ff4d4d; color: white; animation: pulse 1s infinite;}
+#mic-btn {
+  background: #f0f2f5;
+  font-size: 18px;
+  padding: 8px 16px;
+}
+#mic-btn.recording {
+  background: #ff4d4d;
+  color: white;
+  animation: pulse 1s infinite;
+}
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.4);}
-  70% { box-shadow: 0 0 0 10px rgba(255, 77, 77, 0);}
-  100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0);}
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 77, 77, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 77, 0);
+  }
 }
 
 /* Auto-read button - Light green when ON */
@@ -369,12 +409,30 @@ body.dark .message tr:hover td {
   box-shadow: 0 0 8px rgba(144, 238, 144, 0.5);
 }
 
-#tts-stop-btn { background: #dc3545; color: white;}
-#tts-replay-btn { background: #6f42c1; color: white;}
-#listen-practice-btn { background: #20c997; color: white;}
-#flashcard-btn { background: #8b5cf6; color: white;}
-#theme-toggle-btn { background: #343a40; color: white;}
-#clear-chat-btn { background: #ff6b6b; color: white;}
+#tts-stop-btn {
+  background: #dc3545;
+  color: white;
+}
+#tts-replay-btn {
+  background: #6f42c1;
+  color: white;
+}
+#listen-practice-btn {
+  background: #20c997;
+  color: white;
+}
+#flashcard-btn {
+  background: #8b5cf6;
+  color: white;
+}
+#theme-toggle-btn {
+  background: #343a40;
+  color: white;
+}
+#clear-chat-btn {
+  background: #ff6b6b;
+  color: white;
+}
 
 select {
   padding: 10px 14px;
@@ -467,35 +525,69 @@ body.dark #tts-toggle-btn.tts-on {
   box-shadow: 0 0 8px rgba(45, 106, 45, 0.5);
 }
 
-/* RESPONSIVE */
-@media (max-width: 780px) {
-  .app-wrapper {
-    padding: 12px;
-  }
-  header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .chat-session-bar {
-    margin-left: 0;
-    justify-content: space-between;
-  }
-  .message {
-    max-width: 95%;
-  }
-  .input-area {
-    flex-wrap: wrap;
-  }
-  #user-input {
-    flex: 1 1 100%;
-    order: 1;
-  }
-  .input-area button,
-  .input-area select {
-    order: 2;
-  }
+/* ANTI-FLICKER: Reserve header space BEFORE any JS runs */
+header {
+  /* Fix header height */
+  min-height: 85px;
 }
 
+#auth-nav {
+  /* Force space reservation even when empty */
+  display: flex !important;
+  min-width: 160px;
+  justify-content: flex-end;
+}
+
+/* Hide the placeholder once auth loads */
+body.auth-loaded #auth-nav:empty::after {
+  display: none;
+}
+
+/* CRITICAL FIX: Prevent button flicker on refresh */
+#auth-nav {
+  /* Reserve space before content loads */
+  min-width: 160px;
+  min-height: 40px;
+  /* Prevent layout shifts */
+  flex-shrink: 0;
+}
+
+/* Ensure the chat session bar has reserved space */
+.chat-session-bar {
+  flex-shrink: 0;
+}
+
+/* Optional but helpful - add a skeleton loader state */
+#auth-nav:empty {
+  /* Show a subtle placeholder while loading */
+  position: relative;
+}
+
+#auth-nav:empty::after {
+  content: "•••";
+  opacity: 0.5;
+  font-size: 0.85rem;
+  padding: 6px 14px;
+}
+
+/* 2. Your snippet for Small Screens */
+@media (max-width: 780px) {
+  header {
+    flex-direction: column;
+    align-items: flex-end;   /* Forces all header children to the right */
+  }
+
+  .chat-session-bar {
+    margin-left: auto;
+    justify-content: flex-end;
+    width: 100%; 
+  }
+
+  #auth-nav {
+    align-self: flex-end;
+    margin-left: auto;
+  }
+}
 /* ─── Auth Nav ─────────────────────────────────────────────────────────────── */
 #auth-nav {
   display: flex;
@@ -526,35 +618,48 @@ body.dark #tts-toggle-btn.tts-on {
   font-weight: 500;
   cursor: pointer;
   border: none;
-  transition: background 0.15s, opacity 0.15s;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
 }
 
 .auth-btn-primary {
   background: #5b6af0;
   color: #fff;
 }
-.auth-btn-primary:hover { background: #4a59d8; }
+.auth-btn-primary:hover {
+  background: #4a59d8;
+}
 
 .auth-btn-ghost {
   background: transparent;
   color: var(--btn-text, #555);
   border: 1px solid var(--border-color, #ccc);
 }
-.auth-btn-ghost:hover { background: var(--btn-bg, #f0f0f0); }
+.auth-btn-ghost:hover {
+  background: var(--btn-bg, #f0f0f0);
+}
 
 /* ─── Auth Modal ───────────────────────────────────────────────────────────── */
 #auth-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.45);
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  animation: fadeIn .15s ease;
+  animation: fadeIn 0.15s ease;
 }
 
-@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 
 .auth-modal {
   background: var(--bg, #fff);
@@ -563,11 +668,20 @@ body.dark #tts-toggle-btn.tts-on {
   padding: 32px 28px 24px;
   width: min(420px, 94vw);
   position: relative;
-  box-shadow: 0 20px 60px rgba(0,0,0,.25);
-  animation: slideUp .2s ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.2s ease;
 }
 
-@keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 
 .auth-modal-close {
   position: absolute;
@@ -582,7 +696,9 @@ body.dark #tts-toggle-btn.tts-on {
   line-height: 1;
   padding: 4px;
 }
-.auth-modal-close:hover { opacity: 1; }
+.auth-modal-close:hover {
+  opacity: 1;
+}
 
 .auth-tabs {
   display: flex;
@@ -602,7 +718,9 @@ body.dark #tts-toggle-btn.tts-on {
   color: var(--text-color, #555);
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
-  transition: color .15s, border-color .15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 .auth-tab.active {
   color: #5b6af0;
@@ -636,7 +754,7 @@ body.dark #tts-toggle-btn.tts-on {
   font-size: 0.95rem;
   background: var(--input-bg, #f9f9fb);
   color: var(--text-color, #1a1a2e);
-  transition: border-color .15s;
+  transition: border-color 0.15s;
 }
 .auth-form input:focus {
   outline: none;
@@ -665,7 +783,10 @@ body.dark #tts-toggle-btn.tts-on {
   font-size: 1rem;
   margin-top: 4px;
 }
-.auth-submit:disabled { opacity: 0.65; cursor: not-allowed; }
+.auth-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
 
 .auth-switch {
   text-align: center;
@@ -673,8 +794,13 @@ body.dark #tts-toggle-btn.tts-on {
   margin: 0;
   opacity: 0.7;
 }
-.auth-switch a { color: #5b6af0; text-decoration: none; }
-.auth-switch a:hover { text-decoration: underline; }
+.auth-switch a {
+  color: #5b6af0;
+  text-decoration: none;
+}
+.auth-switch a:hover {
+  text-decoration: underline;
+}
 
 .auth-divider {
   border: none;
@@ -706,4 +832,6 @@ body.dark .auth-btn-ghost {
   color: #c0c0d0;
   border-color: #3a3a5e;
 }
-body.dark .auth-btn-ghost:hover { background: #2a2a3e; }
+body.dark .auth-btn-ghost:hover {
+  background: #2a2a3e;
+}

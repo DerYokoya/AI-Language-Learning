@@ -15,8 +15,6 @@ import { startListeningPractice } from "./listening.js";
 
 // ─── Auth bootstrap ────────────────────────────────────────────────────────────
 // window.currentUser is set by auth.js before main.js is imported (index.html).
-// Do NOT fetch it again here — auth.js fires "authchange" events instead.
-
 
 // ─── Server-side chat API helpers ─────────────────────────────────────────────
 async function apiFetchChats() {
