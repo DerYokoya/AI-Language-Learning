@@ -4,11 +4,7 @@ An AI-powered language learning assistant designed to provide an immersive and i
 
 ### Live Demo & Screenshots
 
-https://github.com/user-attachments/assets/06651190-5a9c-4cb5-a007-ae60e2d41fe5
-
-![Main user interface](screenshots/earlyscreenshot.png)
-![Flashcard generation and study interface](screenshots/flashcardexample.png)
-![Flipped flashcard with translation and example](screenshots/flashcardexample2.png)
+https://github.com/user-attachments/assets/afb80c07-449f-48d3-b7ae-88455e3141f8
 
 ## Key Features
 
