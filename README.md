@@ -36,7 +36,8 @@ https://github.com/user-attachments/assets/afb80c07-449f-48d3-b7ae-88455e3141f8
 -   **Frontend**: HTML5, CSS3, Vanilla JavaScript
 -   **Backend**: Node.js, Express
 -   **AI Service**: [OpenRouter API](https://openrouter.ai/)
--   **Data Persistence**: Browser `LocalStorage` for chat sessions, flashcards, and user settings.
+-   **Data Persistence**: Browser `LocalStorage` for chat sessions, flashcards, and user settings for guest mode.
+-   **Account Management**: User can signup / login for persistence from the database (doesn't depend on local storage).
 
 ## Getting Started
 
