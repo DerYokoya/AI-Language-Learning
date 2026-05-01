@@ -248,7 +248,7 @@ Flashcard interface:
 
 Grammar mode :
 
-![GrammarScreenshot](screenshots/GrammarScreenshot.png)
+![Grammar Screenshot](screenshots/GrammarScreenshot.png)
 
 ---
 
