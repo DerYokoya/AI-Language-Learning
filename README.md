@@ -6,6 +6,12 @@ An AI-powered language learning assistant that provides an immersive, interactiv
 
 ---
 
+## View Online
+
+https://ai-language-learning.onrender.com/
+
+## Showcase Video
+
 https://github.com/user-attachments/assets/afb80c07-449f-48d3-b7ae-88455e3141f8
 
 ## ✨ Features
