@@ -240,11 +240,15 @@ All API routes are prefixed with `/api`.
 
 UI snapshot:
 
-![Early Screenshot](screenshots/earlyscreenshot.png)
+![Flashcards Screenshot](screenshots/FlashcardsScreenshot.png)
 
 Flashcard interface:
 
-![Flashcard Example](screenshots/flashcardexample.png)
+![Dark Theme Screenshot](screenshots/DarkThemeScreenshot.png)
+
+Grammar mode :
+
+![GrammarScreenshot](screenshots/GrammarScreenshot.png)
 
 ---
 
