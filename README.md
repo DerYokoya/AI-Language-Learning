@@ -10,6 +10,8 @@ A full-stack AI language learning platform that provides an immersive, interacti
 
 [![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge)](https://ai-language-learning.onrender.com/)
 
+---
+
 ## Showcase Video
 
 https://github.com/user-attachments/assets/afb80c07-449f-48d3-b7ae-88455e3141f8
@@ -24,7 +26,7 @@ https://github.com/user-attachments/assets/afb80c07-449f-48d3-b7ae-88455e3141f8
   <img src="screenshots/GrammarScreenshot.png" width="32%" />
 </p>
 
-*From left to right: UI Snapshot, Flashcard Interface (Dark Mode), and Grammar Mode.*
+*From left to right: Flashcard Interface, Dark Mode Snapshot, and Grammar Mode.*
 
 ---
 
@@ -97,7 +99,7 @@ PostgreSQL Database
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
