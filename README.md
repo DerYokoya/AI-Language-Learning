@@ -1,6 +1,6 @@
 # 🌍 AI Language Learning
 
-An AI-powered language learning assistant that provides an immersive, interactive practice environment. Engage in dynamic conversations, master grammar, expand vocabulary, and test your skills with real-world scenarios. All powered by a modern Node.js backend with full user authentication and persistent cloud storage.
+A full-stack AI language learning platform that provides an immersive, interactive practice environment. Engage in dynamic conversations, master grammar, expand vocabulary, and test your skills with real-world scenarios. All powered by a modern Node.js backend with full user authentication and persistent cloud storage.
 
 > **Demo video and screenshots** in the `/screenshots` directory. A showcase video is also available via the GitHub Releases / assets section of the repository.
 
@@ -8,7 +8,7 @@ An AI-powered language learning assistant that provides an immersive, interactiv
 
 ## View Online
 
-https://ai-language-learning.onrender.com/
+[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge)](https://ai-language-learning.onrender.com/)
 
 ## Showcase Video
 
@@ -156,6 +156,18 @@ ai-language-learning/
 | `flashcards` | Vocabulary cards with known/unknown status and review count |
 
 ---
+
+## 📸 Screenshots
+
+<p align="center">
+  <img src="screenshots/FlashcardsScreenshot.png" width="32%" />
+  <img src="screenshots/DarkThemeScreenshot.png" width="32%" /> 
+  <img src="screenshots/GrammarScreenshot.png" width="32%" />
+</p>
+
+*From left to right: UI Snapshot, Flashcard Interface (Dark Mode), and Grammar Mode.*
+
+---
 ## ✨ Features
 
 ### 💬 Four Dynamic Learning Modes
@@ -263,21 +275,12 @@ When logged in, all chat sessions, messages, flashcards, and settings sync to a 
 
 ---
 
-## 📸 Screenshots
+## Challenges
 
-UI snapshot:
-
-![Flashcards Screenshot](screenshots/FlashcardsScreenshot.png)
-
-Flashcard interface:
-
-![Dark Theme Screenshot](screenshots/DarkThemeScreenshot.png)
-
-Grammar mode :
-
-![Grammar Screenshot](screenshots/GrammarScreenshot.png)
-
----
+- Synchronizing AI chat state with persistent database storage
+- Designing secure token rotation with refresh token revocation
+- Managing dual storage system (localStorage vs PostgreSQL)
+- Structuring modular backend controllers for scalability
 
 ## 🤝 Contributing
 
