@@ -14,42 +14,23 @@ https://ai-language-learning.onrender.com/
 
 https://github.com/user-attachments/assets/afb80c07-449f-48d3-b7ae-88455e3141f8
 
-## ✨ Features
+---
 
-### 💬 Four Dynamic Learning Modes
-Switch instantly between focused practice styles:
-- **Conversation** — Practice natural, open-ended dialogue. The AI gently corrects mistakes and asks follow-up questions.
-- **Grammar** — Receive targeted corrections, detailed rule explanations, and practice exercises.
-- **Vocabulary** — Learn new words, synonyms, and contextual usage examples.
-- **Roleplay** — Immerse yourself in real-world scenarios such as ordering at a restaurant, checking into a hotel, or navigating an airport.
+## System Overview
 
-### 🎧 Interactive Listening Practice
-The AI speaks a sentence in the target language, you repeat it using your microphone, and you get instant feedback with an accuracy score to sharpen both comprehension and pronunciation.
+The system is designed as a layered full-stack architecture separating UI, API logic, services, and persistence for scalability and maintainability.
 
-### 📇 AI-Generated Flashcards
-Automatically generate a vocabulary deck from your conversation history. Study in a dedicated flashcard interface, mark cards as known or unknown, and track progress over time.
-
-### 🗣️ Integrated Speech Tools
-- **Speech-to-Text** — Speak your responses instead of typing.
-- **Text-to-Speech** — Enable Auto-Read to have AI responses spoken aloud. Replay or stop playback at any time.
-
-### 🔐 Full User Authentication
-- Secure sign-up and login with **bcrypt**-hashed passwords.
-- **JWT-based** access tokens (15-minute expiry) with rotating **refresh tokens** (30-day expiry) stored as HttpOnly cookies.
-- Token rotation on every refresh and explicit logout revocation.
-
-### ☁️ Cloud Data Persistence
-When logged in, all chat sessions, messages, flashcards, and settings sync to a **PostgreSQL** database, so your data follows you across devices.
-
-### ⚙️ Session Management
-- Create, rename, delete, and switch between multiple chat sessions.
-- Per-session language, difficulty, mode, and auto-read settings are saved automatically.
-- Guests use browser `localStorage`; authenticated users sync to the cloud.
-
-### 🎨 Customizable Experience
-- Languages: Spanish, French, German, Italian, Japanese, Korean, and Mandarin Chinese.
-- Difficulty levels: Beginner, Intermediate, Advanced.
-- Light and dark theme toggle.
+```
+Frontend (Vanilla JS)
+        ↓
+REST API (Express)
+        ↓
+Controllers Layer
+        ↓
+Services (AI / Auth / Logic)
+        ↓
+PostgreSQL Database
+```
 
 ---
 
@@ -59,10 +40,57 @@ When logged in, all chat sessions, messages, flashcards, and settings sync to a 
 |---|---|
 | **Frontend** | HTML5, CSS3, Vanilla JavaScript |
 | **Backend** | Node.js, Express 5 |
+| **Architecture Style** | RESTful API |
 | **AI Service** | [OpenRouter API](https://openrouter.ai/) (OpenAI-compatible) |
 | **Database** | PostgreSQL (`pg`) |
-| **Auth** | JWT (`jsonwebtoken`) + bcrypt |
+| **Storage** | Cloud + local hybrid state system |
+| **Auth** | JWT (`jsonwebtoken`) (refresh rotation) + bcrypt |
 | **Dev tooling** | Nodemon, dotenv |
+
+---
+
+## 🔌 API Reference
+
+All API routes are prefixed with `/api`.
+
+### Auth — `/api/auth`
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/signup` | Register a new user |
+| `POST` | `/login` | Log in and receive tokens |
+| `POST` | `/logout` | Revoke refresh token and clear cookies |
+| `POST` | `/refresh` | Rotate refresh token, issue new access token |
+| `GET` | `/me` | Return current authenticated user |
+
+### Chats — `/api/chats` *(requires auth)*
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/` | List all chats for the user |
+| `GET` | `/:id` | Get a single chat with its messages |
+| `POST` | `/` | Create a new chat session |
+| `PUT` | `/:id` | Update chat settings (title, mode, language, etc.) |
+| `DELETE` | `/:id` | Delete a chat and all its messages |
+| `POST` | `/:id/messages` | Append a message to a chat |
+
+### Flashcards — `/api/flashcards` *(requires auth)*
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/` | List all flashcards |
+| `POST` | `/` | Add a new flashcard |
+| `PUT` | `/:id` | Update a flashcard (e.g., mark known) |
+| `DELETE` | `/:id` | Delete a flashcard |
+
+### AI — `/api/ai`
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/ask` | Send a prompt; returns an AI tutor response |
+
+### Storage — `/api/storage` *(requires auth)*
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/:key` | Retrieve a stored value by key |
+| `PUT` | `/:key` | Set / upsert a stored value |
+| `DELETE` | `/:key` | Delete a stored key |
 
 ---
 
@@ -128,6 +156,44 @@ ai-language-learning/
 | `flashcards` | Vocabulary cards with known/unknown status and review count |
 
 ---
+## ✨ Features
+
+### 💬 Four Dynamic Learning Modes
+Switch instantly between focused practice styles:
+- **Conversation** — Practice natural, open-ended dialogue. The AI gently corrects mistakes and asks follow-up questions.
+- **Grammar** — Receive targeted corrections, detailed rule explanations, and practice exercises.
+- **Vocabulary** — Learn new words, synonyms, and contextual usage examples.
+- **Roleplay** — Immerse yourself in real-world scenarios such as ordering at a restaurant, checking into a hotel, or navigating an airport.
+
+### 🎧 Interactive Listening Practice
+The AI speaks a sentence in the target language, you repeat it using your microphone, and you get instant feedback with an accuracy score to sharpen both comprehension and pronunciation.
+
+### 📇 AI-Generated Flashcards
+Automatically generate a vocabulary deck from your conversation history. Study in a dedicated flashcard interface, mark cards as known or unknown, and track progress over time.
+
+### 🗣️ Integrated Speech Tools
+- **Speech-to-Text** — Speak your responses instead of typing.
+- **Text-to-Speech** — Enable Auto-Read to have AI responses spoken aloud. Replay or stop playback at any time.
+
+### 🔐 Full User Authentication
+- Secure sign-up and login with **bcrypt**-hashed passwords.
+- **JWT-based** access tokens (15-minute expiry) with rotating **refresh tokens** (30-day expiry) stored as HttpOnly cookies.
+- Token rotation on every refresh and explicit logout revocation.
+
+### ☁️ Cloud Data Persistence
+When logged in, all chat sessions, messages, flashcards, and settings sync to a **PostgreSQL** database, so your data follows you across devices.
+
+### ⚙️ Session Management
+- Create, rename, delete, and switch between multiple chat sessions.
+- Per-session language, difficulty, mode, and auto-read settings are saved automatically.
+- Guests use browser `localStorage`; authenticated users sync to the cloud.
+
+### 🎨 Customizable Experience
+- Languages: Spanish, French, German, Italian, Japanese, Korean, and Mandarin Chinese.
+- Difficulty levels: Beginner, Intermediate, Advanced.
+- Light and dark theme toggle.
+
+---
 
 ## 🚀 Getting Started
 
@@ -185,51 +251,6 @@ ai-language-learning/
    ```
    http://localhost:3000
    ```
-
----
-
-## 🔌 API Reference
-
-All API routes are prefixed with `/api`.
-
-### Auth — `/api/auth`
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/signup` | Register a new user |
-| `POST` | `/login` | Log in and receive tokens |
-| `POST` | `/logout` | Revoke refresh token and clear cookies |
-| `POST` | `/refresh` | Rotate refresh token, issue new access token |
-| `GET` | `/me` | Return current authenticated user |
-
-### Chats — `/api/chats` *(requires auth)*
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/` | List all chats for the user |
-| `GET` | `/:id` | Get a single chat with its messages |
-| `POST` | `/` | Create a new chat session |
-| `PUT` | `/:id` | Update chat settings (title, mode, language, etc.) |
-| `DELETE` | `/:id` | Delete a chat and all its messages |
-| `POST` | `/:id/messages` | Append a message to a chat |
-
-### Flashcards — `/api/flashcards` *(requires auth)*
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/` | List all flashcards |
-| `POST` | `/` | Add a new flashcard |
-| `PUT` | `/:id` | Update a flashcard (e.g., mark known) |
-| `DELETE` | `/:id` | Delete a flashcard |
-
-### AI — `/api/ai`
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/ask` | Send a prompt; returns an AI tutor response |
-
-### Storage — `/api/storage` *(requires auth)*
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/:key` | Retrieve a stored value by key |
-| `PUT` | `/:key` | Set / upsert a stored value |
-| `DELETE` | `/:key` | Delete a stored key |
 
 ---
 
