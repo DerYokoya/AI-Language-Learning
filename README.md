@@ -2,7 +2,7 @@
 
 A full-stack AI language learning platform that provides an immersive, interactive practice environment. Engage in dynamic conversations, master grammar, expand vocabulary, and test your skills with real-world scenarios. All powered by a modern Node.js backend with full user authentication and persistent cloud storage.
 
-> **Demo video and screenshots** in the `/screenshots` directory. A showcase video is also available via the GitHub Releases / assets section of the repository.
+> **Demo video and screenshots** in the `/screenshots` directory.
 
 ---
 
@@ -16,7 +16,70 @@ https://github.com/user-attachments/assets/afb80c07-449f-48d3-b7ae-88455e3141f8
 
 ---
 
-## System Overview
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/FlashcardsScreenshot.png" width="32%" />
+  <img src="screenshots/DarkThemeScreenshot.png" width="32%" /> 
+  <img src="screenshots/GrammarScreenshot.png" width="32%" />
+</p>
+
+*From left to right: UI Snapshot, Flashcard Interface (Dark Mode), and Grammar Mode.*
+
+---
+
+## Overview
+
+AI Language Learning is a full-stack web application that provides an interactive environment for practicing foreign languages with an AI tutor.
+
+Users can engage in structured learning modes such as conversation, grammar correction, vocabulary building, and scenario-based roleplay. The system maintains persistent chat sessions, learning history, and flashcards to support long-term progression.
+
+The application is built as a RESTful client-server architecture using a Node.js + Express backend and a vanilla JavaScript frontend. It integrates an AI model via OpenRouter and stores user data in a PostgreSQL database.
+
+The goal of this project is to simulate a production-style learning platform with authentication, persistent state, and modular backend services, rather than a simple chat interface.
+
+---
+
+## Features
+
+### Four Dynamic Learning Modes
+Switch instantly between focused practice styles:
+- **Conversation** — Practice natural, open-ended dialogue. The AI gently corrects mistakes and asks follow-up questions.
+- **Grammar** — Receive targeted corrections, detailed rule explanations, and practice exercises.
+- **Vocabulary** — Learn new words, synonyms, and contextual usage examples.
+- **Roleplay** — Immerse yourself in real-world scenarios such as ordering at a restaurant, checking into a hotel, or navigating an airport.
+
+### Interactive Listening Practice
+The AI speaks a sentence in the target language, you repeat it using your microphone, and you get instant feedback with an accuracy score to sharpen both comprehension and pronunciation.
+
+### AI-Generated Flashcards
+Automatically generate a vocabulary deck from your conversation history. Study in a dedicated flashcard interface, mark cards as known or unknown, and track progress over time.
+
+### Integrated Speech Tools
+- **Speech-to-Text** — Speak your responses instead of typing.
+- **Text-to-Speech** — Enable Auto-Read to have AI responses spoken aloud. Replay or stop playback at any time.
+
+### Full User Authentication
+- Secure sign-up and login with **bcrypt**-hashed passwords.
+- **JWT-based** access tokens (15-minute expiry) with rotating **refresh tokens** (30-day expiry) stored as HttpOnly cookies.
+- Token rotation on every refresh and explicit logout revocation.
+
+### Cloud Data Persistence
+When logged in, all chat sessions, messages, flashcards, and settings sync to a **PostgreSQL** database, so your data follows you across devices.
+
+### Session Management
+- Create, rename, delete, and switch between multiple chat sessions.
+- Per-session language, difficulty, mode, and auto-read settings are saved automatically.
+- Guests use browser `localStorage`; authenticated users sync to the cloud.
+
+### Customizable Experience
+- Languages: Spanish, French, German, Italian, Japanese, Korean, and Mandarin Chinese.
+- Difficulty levels: Beginner, Intermediate, Advanced.
+- Light and dark theme toggle.
+
+---
+
+## System Architecture
 
 The system is designed as a layered full-stack architecture separating UI, API logic, services, and persistence for scalability and maintainability.
 
@@ -94,6 +157,20 @@ All API routes are prefixed with `/api`.
 
 ---
 
+## Database Schema
+
+| Table | Purpose |
+|---|---|
+| `users` | Email, hashed password, display name |
+| `refresh_tokens` | Persisted refresh tokens with expiry |
+| `user_settings` | Per-user theme, language, difficulty, auto-read preferences |
+| `user_storage` | Generic key/value store for syncing client state |
+| `chats` | Chat sessions with mode, language, difficulty, scenario settings |
+| `chat_messages` | Individual messages (sender, text, HTML) per chat |
+| `flashcards` | Vocabulary cards with known/unknown status and review count |
+
+---
+
 ## Project Structure
 
 ```
@@ -143,70 +220,21 @@ ai-language-learning/
 
 ---
 
-## Database Schema
+## Authentication Design
 
-| Table | Purpose |
-|---|---|
-| `users` | Email, hashed password, display name |
-| `refresh_tokens` | Persisted refresh tokens with expiry |
-| `user_settings` | Per-user theme, language, difficulty, auto-read preferences |
-| `user_storage` | Generic key/value store for syncing client state |
-| `chats` | Chat sessions with mode, language, difficulty, scenario settings |
-| `chat_messages` | Individual messages (sender, text, HTML) per chat |
-| `flashcards` | Vocabulary cards with known/unknown status and review count |
+- **Access tokens** — short-lived JWTs (15 min) delivered as an `HttpOnly` cookie.
+- **Refresh tokens** — long-lived JWTs (30 days) stored in both an `HttpOnly` cookie (path-restricted to `/api/auth/refresh`) and the database for revocation.
+- **Token rotation** — every refresh call deletes the old token and issues a new pair, preventing replay attacks.
+- **Logout** — explicitly deletes the refresh token from the database and clears both cookies.
 
 ---
 
-## Screenshots
+## Challenges
 
-<p align="center">
-  <img src="screenshots/FlashcardsScreenshot.png" width="32%" />
-  <img src="screenshots/DarkThemeScreenshot.png" width="32%" /> 
-  <img src="screenshots/GrammarScreenshot.png" width="32%" />
-</p>
-
-*From left to right: UI Snapshot, Flashcard Interface (Dark Mode), and Grammar Mode.*
-
----
-
-## Features
-
-### Four Dynamic Learning Modes
-Switch instantly between focused practice styles:
-- **Conversation** — Practice natural, open-ended dialogue. The AI gently corrects mistakes and asks follow-up questions.
-- **Grammar** — Receive targeted corrections, detailed rule explanations, and practice exercises.
-- **Vocabulary** — Learn new words, synonyms, and contextual usage examples.
-- **Roleplay** — Immerse yourself in real-world scenarios such as ordering at a restaurant, checking into a hotel, or navigating an airport.
-
-### Interactive Listening Practice
-The AI speaks a sentence in the target language, you repeat it using your microphone, and you get instant feedback with an accuracy score to sharpen both comprehension and pronunciation.
-
-### AI-Generated Flashcards
-Automatically generate a vocabulary deck from your conversation history. Study in a dedicated flashcard interface, mark cards as known or unknown, and track progress over time.
-
-### Integrated Speech Tools
-- **Speech-to-Text** — Speak your responses instead of typing.
-- **Text-to-Speech** — Enable Auto-Read to have AI responses spoken aloud. Replay or stop playback at any time.
-
-### Full User Authentication
-- Secure sign-up and login with **bcrypt**-hashed passwords.
-- **JWT-based** access tokens (15-minute expiry) with rotating **refresh tokens** (30-day expiry) stored as HttpOnly cookies.
-- Token rotation on every refresh and explicit logout revocation.
-
-### Cloud Data Persistence
-When logged in, all chat sessions, messages, flashcards, and settings sync to a **PostgreSQL** database, so your data follows you across devices.
-
-### Session Management
-- Create, rename, delete, and switch between multiple chat sessions.
-- Per-session language, difficulty, mode, and auto-read settings are saved automatically.
-- Guests use browser `localStorage`; authenticated users sync to the cloud.
-
-### Customizable Experience
-- Languages: Spanish, French, German, Italian, Japanese, Korean, and Mandarin Chinese.
-- Difficulty levels: Beginner, Intermediate, Advanced.
-- Light and dark theme toggle.
-
----
+- Synchronizing AI chat state with persistent database storage
+- Designing secure token rotation with refresh token revocation
+- Managing dual storage system (localStorage vs PostgreSQL)
+- Structuring modular backend controllers for scalability
 
 ## Getting Started
 
@@ -266,22 +294,6 @@ When logged in, all chat sessions, messages, flashcards, and settings sync to a 
    ```
 
 ---
-
-## Authentication Design
-
-- **Access tokens** — short-lived JWTs (15 min) delivered as an `HttpOnly` cookie.
-- **Refresh tokens** — long-lived JWTs (30 days) stored in both an `HttpOnly` cookie (path-restricted to `/api/auth/refresh`) and the database for revocation.
-- **Token rotation** — every refresh call deletes the old token and issues a new pair, preventing replay attacks.
-- **Logout** — explicitly deletes the refresh token from the database and clears both cookies.
-
----
-
-## Challenges
-
-- Synchronizing AI chat state with persistent database storage
-- Designing secure token rotation with refresh token revocation
-- Managing dual storage system (localStorage vs PostgreSQL)
-- Structuring modular backend controllers for scalability
 
 ## Contributing
 
