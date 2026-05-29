@@ -1,3 +1,5 @@
+[Français](./README.fr.md) | **English**
+
 # 🌍 AI Language Learning
 
 A full-stack AI language learning platform that provides an immersive, interactive practice environment. Engage in dynamic conversations, master grammar, expand vocabulary, and test your skills with real-world scenarios. All powered by a modern Node.js backend with full user authentication and persistent cloud storage.
