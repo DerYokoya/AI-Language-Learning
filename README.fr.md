@@ -77,7 +77,7 @@ Une fois connecté, toutes les sessions de chat, les messages, les fiches et les
 - Les invités utilisent le `localStorage` du navigateur ; les utilisateurs authentifiés se synchronisent avec le cloud.
 
 ### Expérience personnalisable
-- Langues : espagnol, français, allemand, italien, japonais, coréen, chinois mandarin, portugais, arabe standard moderne et hindi.
+- Langues : espagnol, français, allemand, italien, japonais, coréen, mandarin, portugais, arabe standard moderne et hindi.
 - Niveaux de difficulté : débutant, intermédiaire, avancé.
 - Basculer entre les thèmes clair et sombre.
 
