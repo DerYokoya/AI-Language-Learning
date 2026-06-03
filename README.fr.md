@@ -99,6 +99,13 @@ Services (IA / Authentification / Logique)
 Base de données PostgreSQL
 ```
 
+### Gestion des erreurs
+
+L'application repose sur un patron de gestion centralisée des erreurs :
+
+- **`AppError`** (`src/utils/AppError.js`) — une classe d'erreur personnalisée qui encapsule un message et un code de statut HTTP, utilisée dans l'ensemble des contrôleurs pour lever des erreurs cohérentes et typées.
+- **`errorHandler`** (`src/middleware/errorHandler.js`) — un middleware de gestion d'erreurs Express enregistré en fin de chaîne. Il intercepte toutes les instances `AppError` levées (ainsi que les erreurs inattendues) et retourne une réponse JSON uniforme, maintenant la logique d'erreur hors des contrôleurs individuels.
+
 ---
 
 ## Pile technologique
@@ -113,6 +120,7 @@ Base de données PostgreSQL
 | **Stockage** | Système hybride cloud + local |
 | **Auth** | JWT (`jsonwebtoken`) (rotation des jetons) + bcrypt |
 | **Outils de développement** | Nodemon, dotenv |
+| **Tests** | Jest |
 
 ---
 ## Référence API
@@ -187,6 +195,7 @@ ai-language-learning/
 │       ├── auth.js           # Flux d'authentification
 │       ├── chat.js           # Gestion des sessions de chat
 │       ├── flashcards.js     # Interface des fiches de vocabulaire
+│       ├── languages.js      # Définitions partagées des langues
 │       ├── listening.js      # Module d'entraînement à l'écoute
 │       ├── appStorage.js     # Synchronisation du stockage cloud
 │       └── storage.js        # Aides au stockage local
@@ -202,7 +211,8 @@ ai-language-learning/
 │   │   ├── connection.js         # Configuration du pool pg
 │   │   └── schema.sql            # Schéma complet de la base de données
 │   ├── middleware/
-│   │   └── authMiddleware.js     # Middleware de vérification JWT
+│   │   ├── authMiddleware.js     # Middleware de vérification JWT
+│   │   └── errorHandler.js      # Gestionnaire centralisé des erreurs AppError
 │   ├── routes/
 │   │   ├── ai.js
 │   │   ├── auth.js
@@ -213,9 +223,19 @@ ai-language-learning/
 │   ├── services/
 │   │   └── openrouter.js         # Client compatible OpenAI pour OpenRouter
 │   └── utils/
+│       ├── AppError.js           # Classe d'erreur personnalisée avec codes HTTP
 │       ├── hash.js               # Aides bcrypt
 │       └── jwt.js                # Signature/vérification des jetons d'accès et de rafraîchissement
+├── tests/
+│   ├── authController.test.js
+│   ├── aiController.test.js
+│   ├── chatController.test.js
+│   ├── flashcardController.test.js
+│   ├── authMiddleware.test.js
+│   ├── hash.test.js
+│   └── jwt.test.js
 ├── screenshots/
+├── jest.config.js            # Configuration Jest
 ├── server.js                 # Point d'entrée de l'application Express
 ├── package.json
 └── .env                      # Variables d'environnement (non validées)
@@ -295,6 +315,33 @@ ai-language-learning/
    ```
    http://localhost:3000
    ```
+
+### Exécuter les tests
+
+Le projet inclut une suite de tests Jest complète couvrant les contrôleurs, les middlewares et les utilitaires. Consultez la section [Tests](#tests) pour les détails et la liste complète des fichiers.
+
+---
+
+## Tests
+
+Le projet est livré avec une suite Jest couvrant le cœur du backend :
+
+| Fichier | Ce qui est testé |
+|---|---|
+| `authController.test.js` | Flux d'inscription, connexion, déconnexion, actualisation et `/me` |
+| `aiController.test.js` | Construction des invites IA et traitement des réponses OpenRouter |
+| `chatController.test.js` | Opérations CRUD du chat et gestion des messages |
+| `flashcardController.test.js` | Création, mise à jour et suppression des fiches |
+| `authMiddleware.test.js` | Vérification JWT et comportement du garde de requête |
+| `hash.test.js` | Aides au hachage et à la comparaison bcrypt |
+| `jwt.test.js` | Signature et vérification des jetons d'accès et de rafraîchissement |
+
+Exécuter la suite :
+
+```sh
+npm test              # exécuter une fois
+npm run test:coverage # avec rapport de couverture
+```
 
 ---
 

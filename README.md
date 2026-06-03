@@ -99,6 +99,13 @@ Services (AI / Auth / Logic)
 PostgreSQL Database
 ```
 
+### Error Handling
+
+The application uses a centralized error handling pattern:
+
+- **`AppError`** (`src/utils/AppError.js`) — a custom error class that wraps a message and an HTTP status code, used throughout controllers to throw consistent, typed errors.
+- **`errorHandler`** (`src/middleware/errorHandler.js`) — an Express error-handling middleware registered at the end of the middleware chain. It catches all thrown `AppError` instances (and unexpected errors) and returns a uniform JSON error response, keeping error logic out of individual controllers.
+
 ---
 
 ## Tech Stack
@@ -113,6 +120,7 @@ PostgreSQL Database
 | **Storage** | Cloud + local hybrid state system |
 | **Auth** | JWT (`jsonwebtoken`) (refresh rotation) + bcrypt |
 | **Dev tooling** | Nodemon, dotenv |
+| **Testing** | Jest |
 
 ---
 
@@ -188,6 +196,7 @@ ai-language-learning/
 │       ├── auth.js           # Authentication flow
 │       ├── chat.js           # Chat session management
 │       ├── flashcards.js     # Flashcard interface
+│       ├── languages.js      # Shared language definitions
 │       ├── listening.js      # Listening practice module
 │       ├── appStorage.js     # Cloud storage sync
 │       └── storage.js        # Local storage helpers
@@ -203,7 +212,8 @@ ai-language-learning/
 │   │   ├── connection.js         # pg Pool setup
 │   │   └── schema.sql            # Full DB schema
 │   ├── middleware/
-│   │   └── authMiddleware.js     # JWT verification middleware
+│   │   ├── authMiddleware.js     # JWT verification middleware
+│   │   └── errorHandler.js      # Centralized AppError handler
 │   ├── routes/
 │   │   ├── ai.js
 │   │   ├── auth.js
@@ -214,9 +224,19 @@ ai-language-learning/
 │   ├── services/
 │   │   └── openrouter.js         # OpenAI-compatible client for OpenRouter
 │   └── utils/
+│       ├── AppError.js           # Custom error class with status codes
 │       ├── hash.js               # bcrypt helpers
 │       └── jwt.js                # Access & refresh token signing/verification
+├── tests/
+│   ├── authController.test.js
+│   ├── aiController.test.js
+│   ├── chatController.test.js
+│   ├── flashcardController.test.js
+│   ├── authMiddleware.test.js
+│   ├── hash.test.js
+│   └── jwt.test.js
 ├── screenshots/
+├── jest.config.js            # Jest configuration
 ├── server.js                 # Express app entry point
 ├── package.json
 └── .env                      # Environment variables (not committed)
@@ -296,6 +316,33 @@ ai-language-learning/
    ```
    http://localhost:3000
    ```
+
+### Running Tests
+
+The project includes a full Jest test suite covering controllers, middleware, and utilities. See the [Testing](#testing) section for details and the full file breakdown.
+
+---
+
+## Testing
+
+The project ships with a Jest test suite covering the core backend:
+
+| File | What it tests |
+|---|---|
+| `authController.test.js` | Signup, login, logout, refresh, and `/me` flows |
+| `aiController.test.js` | AI prompt construction and OpenRouter response handling |
+| `chatController.test.js` | Chat CRUD operations and message management |
+| `flashcardController.test.js` | Flashcard creation, updates, and deletion |
+| `authMiddleware.test.js` | JWT verification and request guard behaviour |
+| `hash.test.js` | bcrypt hashing and comparison helpers |
+| `jwt.test.js` | Access and refresh token signing and verification |
+
+Run the suite:
+
+```sh
+npm test              # run once
+npm run test:coverage # with coverage report
+```
 
 ---
 
