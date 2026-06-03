@@ -1,4 +1,3 @@
-// Mock the OpenRouter client before requiring the controller
 const mockCreate = jest.fn();
 jest.mock("../src/services/openrouter", () => ({
   chat: {
@@ -17,6 +16,10 @@ function mockRes() {
   return res;
 }
 
+function mockNext() {
+  return jest.fn();
+}
+
 beforeEach(() => mockCreate.mockReset());
 
 describe("aiController.ask", () => {
@@ -27,10 +30,12 @@ describe("aiController.ask", () => {
 
     const req = { body: { prompt: "Hello", targetLanguage: "Spanish", difficulty: "beginner" } };
     const res = mockRes();
+    const next = mockNext();
 
-    await aiController.ask(req, res);
+    await aiController.ask(req, res, next);
 
     expect(res.json).toHaveBeenCalledWith({ reply: "¡Hola! ¿Cómo estás?" });
+    expect(next).not.toHaveBeenCalled();
   });
 
   it("passes the target language and difficulty into the prompt", async () => {
@@ -40,8 +45,9 @@ describe("aiController.ask", () => {
 
     const req = { body: { prompt: "Hi", targetLanguage: "French", difficulty: "advanced" } };
     const res = mockRes();
+    const next = mockNext();
 
-    await aiController.ask(req, res);
+    await aiController.ask(req, res, next);
 
     const callArg = mockCreate.mock.calls[0][0];
     const userMessage = callArg.messages.find((m) => m.role === "user");
@@ -49,15 +55,16 @@ describe("aiController.ask", () => {
     expect(userMessage.content).toContain("advanced");
   });
 
-  it("returns 500 when the AI client throws", async () => {
+  it("forwards the error to next() when the AI client throws", async () => {
     mockCreate.mockRejectedValueOnce(new Error("API down"));
 
     const req = { body: { prompt: "Hi", targetLanguage: "Spanish", difficulty: "beginner" } };
     const res = mockRes();
+    const next = mockNext();
 
-    await aiController.ask(req, res);
+    await aiController.ask(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: "AI request failed" });
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
+    expect(res.status).not.toHaveBeenCalled();
   });
 });

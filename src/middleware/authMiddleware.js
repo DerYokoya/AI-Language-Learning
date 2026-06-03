@@ -1,4 +1,5 @@
 const jwt = require("../utils/jwt");
+const AppError = require("../utils/AppError");
 
 /**
  * requireAuth — blocks unauthenticated requests.
@@ -7,7 +8,7 @@ const jwt = require("../utils/jwt");
  */
 module.exports = function requireAuth(req, res, next) {
   const token = req.cookies.token;
-  if (!token) return res.status(401).json({ error: "Not authenticated" });
+  if (!token) return next(new AppError("Not authenticated", 401));
 
   try {
     const decoded = jwt.verify(token);
@@ -15,8 +16,8 @@ module.exports = function requireAuth(req, res, next) {
     next();
   } catch (err) {
     if (err.name === "TokenExpiredError") {
-      return res.status(401).json({ error: "Token expired", code: "TOKEN_EXPIRED" });
+      return next(new AppError("Token expired", 401));
     }
-    return res.status(401).json({ error: "Invalid token" });
+    return next(new AppError("Invalid token", 401));
   }
 };

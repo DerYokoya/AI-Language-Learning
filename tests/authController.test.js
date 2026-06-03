@@ -1,7 +1,6 @@
 process.env.JWT_SECRET = "test-secret-key";
 process.env.JWT_REFRESH_SECRET = "test-refresh-secret";
 
-// ── Mock the DB ────────────────────────────────────────────────────────────────
 const mockQuery = jest.fn();
 jest.mock("../src/db/connection", () => ({ query: mockQuery }));
 
@@ -16,7 +15,10 @@ function mockRes() {
   return res;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+function mockNext() {
+  return jest.fn();
+}
+
 const bcrypt = require("bcrypt");
 
 async function fakeUser(overrides = {}) {
@@ -35,41 +37,70 @@ beforeEach(() => mockQuery.mockReset());
 describe("authController.signup", () => {
   it("creates a user and returns their info", async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [] })           // no existing user
-      .mockResolvedValueOnce({ rows: [{ id: 1, email: "alice@example.com", display_name: "Alice" }] }) // INSERT user
-      .mockResolvedValueOnce({ rows: [] });           // INSERT refresh token
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, email: "alice@example.com", display_name: "Alice" }],
+      })
+      .mockResolvedValueOnce({ rows: [] });
 
-    const req = { body: { email: "alice@example.com", password: "password123", displayName: "Alice" } };
+    const req = {
+      body: {
+        email: "alice@example.com",
+        password: "password123",
+        displayName: "Alice",
+      },
+    };
     const res = mockRes();
+    const next = mockNext();
 
-    await authController.signup(req, res);
+    await authController.signup(req, res, next);
 
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ email: "alice@example.com", displayName: "Alice" })
+      expect.objectContaining({
+        email: "alice@example.com",
+        displayName: "Alice",
+      }),
     );
-    expect(res.cookie).toHaveBeenCalledWith("token", expect.any(String), expect.any(Object));
+    expect(res.cookie).toHaveBeenCalledWith(
+      "token",
+      expect.any(String),
+      expect.any(Object),
+    );
+    expect(next).not.toHaveBeenCalled();
   });
 
-  it("returns 400 when email is missing", async () => {
+  it("calls next with 400 AppError when email is missing", async () => {
     const req = { body: { password: "password123" } };
     const res = mockRes();
+    const next = mockNext();
 
-    await authController.signup(req, res);
+    await authController.signup(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: "Email and password are required" });
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 400,
+        message: "Email and password are required",
+      }),
+    );
+    expect(res.json).not.toHaveBeenCalled();
   });
 
-  it("returns 400 when email is already in use", async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 99 }] }); // existing user found
+  it("calls next with 400 AppError when email is already in use", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 99 }] });
 
     const req = { body: { email: "taken@example.com", password: "pass" } };
     const res = mockRes();
+    const next = mockNext();
 
-    await authController.signup(req, res);
+    await authController.signup(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: "Email already in use" });
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 400,
+        message: "Email already in use",
+      }),
+    );
+    expect(res.json).not.toHaveBeenCalled();
   });
 });
 
@@ -78,59 +109,78 @@ describe("authController.login", () => {
   it("returns user info and sets cookies on valid credentials", async () => {
     const user = await fakeUser();
     mockQuery
-      .mockResolvedValueOnce({ rows: [user] })  // SELECT user
-      .mockResolvedValueOnce({ rows: [] });     // INSERT refresh token
+      .mockResolvedValueOnce({ rows: [user] })
+      .mockResolvedValueOnce({ rows: [] });
 
     const req = { body: { email: user.email, password: "password123" } };
     const res = mockRes();
+    const next = mockNext();
 
-    await authController.login(req, res);
+    await authController.login(req, res, next);
 
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ email: user.email })
+      expect.objectContaining({ email: user.email }),
     );
-    expect(res.cookie).toHaveBeenCalledWith("token", expect.any(String), expect.any(Object));
+    expect(res.cookie).toHaveBeenCalledWith(
+      "token",
+      expect.any(String),
+      expect.any(Object),
+    );
+    expect(next).not.toHaveBeenCalled();
   });
 
-  it("returns 400 for an unknown email", async () => {
+  it("calls next with 400 AppError for an unknown email", async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
 
     const req = { body: { email: "nobody@example.com", password: "x" } };
     const res = mockRes();
+    const next = mockNext();
 
-    await authController.login(req, res);
+    await authController.login(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: "Invalid credentials" });
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 400,
+        message: "Invalid credentials",
+      }),
+    );
   });
 
-  it("returns 400 for a wrong password", async () => {
+  it("calls next with 400 AppError for a wrong password", async () => {
     const user = await fakeUser();
     mockQuery.mockResolvedValueOnce({ rows: [user] });
 
     const req = { body: { email: user.email, password: "wrongpassword" } };
     const res = mockRes();
+    const next = mockNext();
 
-    await authController.login(req, res);
+    await authController.login(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: "Invalid credentials" });
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 400,
+        message: "Invalid credentials",
+      }),
+    );
   });
 
-  it("returns 400 when password field is missing", async () => {
+  it("calls next with 400 AppError when password field is missing", async () => {
     const req = { body: { email: "alice@example.com" } };
     const res = mockRes();
+    const next = mockNext();
 
-    await authController.login(req, res);
+    await authController.login(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400 }),
+    );
   });
 });
 
 // ── logout ─────────────────────────────────────────────────────────────────────
 describe("authController.logout", () => {
   it("deletes the refresh token and clears cookies", async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [] }); // DELETE
+    mockQuery.mockResolvedValueOnce({ rows: [] });
 
     const req = { cookies: { refresh_token: "sometoken" } };
     const res = mockRes();
@@ -139,7 +189,7 @@ describe("authController.logout", () => {
 
     expect(mockQuery).toHaveBeenCalledWith(
       "DELETE FROM refresh_tokens WHERE token=$1",
-      ["sometoken"]
+      ["sometoken"],
     );
     expect(res.clearCookie).toHaveBeenCalledWith("token");
     expect(res.json).toHaveBeenCalledWith({ success: true });
@@ -157,39 +207,51 @@ describe("authController.logout", () => {
 
 // ── refresh ────────────────────────────────────────────────────────────────────
 describe("authController.refresh", () => {
-  it("returns 401 when no refresh_token cookie is present", async () => {
+  it("calls next with 401 AppError when no refresh_token cookie is present", async () => {
     const req = { cookies: {} };
     const res = mockRes();
+    const next = mockNext();
 
-    await authController.refresh(req, res);
+    await authController.refresh(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: "No refresh token" });
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 401, message: "No refresh token" }),
+    );
   });
 
-  it("returns 401 for a malformed refresh token", async () => {
+  it("calls next with 401 AppError for a malformed refresh token", async () => {
     const req = { cookies: { refresh_token: "garbage" } };
     const res = mockRes();
+    const next = mockNext();
 
-    await authController.refresh(req, res);
+    await authController.refresh(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: "Invalid refresh token" });
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 401,
+        message: "Invalid refresh token",
+      }),
+    );
   });
 
-  it("returns 401 when the token has been revoked (not in DB)", async () => {
+  it("calls next with 401 AppError when the token has been revoked", async () => {
     const jwt = require("../src/utils/jwt");
     const token = jwt.signRefresh({ id: 1 });
 
-    mockQuery.mockResolvedValueOnce({ rows: [] }); // no row found
+    mockQuery.mockResolvedValueOnce({ rows: [] });
 
     const req = { cookies: { refresh_token: token } };
     const res = mockRes();
+    const next = mockNext();
 
-    await authController.refresh(req, res);
+    await authController.refresh(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: "Refresh token revoked or expired" });
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 401,
+        message: "Refresh token revoked or expired",
+      }),
+    );
   });
 
   it("rotates the refresh token and returns fresh user info", async () => {
@@ -197,20 +259,28 @@ describe("authController.refresh", () => {
     const token = jwt.signRefresh({ id: 1 });
 
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ token }] })  // SELECT: token found
-      .mockResolvedValueOnce({ rows: [] })            // DELETE old token
-      .mockResolvedValueOnce({ rows: [] })            // INSERT new refresh token
-      .mockResolvedValueOnce({ rows: [{ id: 1, email: "alice@example.com", display_name: "Alice" }] }); // SELECT user
+      .mockResolvedValueOnce({ rows: [{ token }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, email: "alice@example.com", display_name: "Alice" }],
+      });
 
     const req = { cookies: { refresh_token: token } };
     const res = mockRes();
+    const next = mockNext();
 
-    await authController.refresh(req, res);
+    await authController.refresh(req, res, next);
 
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ email: "alice@example.com" })
+      expect.objectContaining({ email: "alice@example.com" }),
     );
-    expect(res.cookie).toHaveBeenCalledWith("token", expect.any(String), expect.any(Object));
+    expect(res.cookie).toHaveBeenCalledWith(
+      "token",
+      expect.any(String),
+      expect.any(Object),
+    );
+    expect(next).not.toHaveBeenCalled();
   });
 });
 
@@ -238,7 +308,9 @@ describe("authController.me", () => {
     const jwt = require("../src/utils/jwt");
     const token = jwt.signAccess({ id: 1 });
 
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, email: "alice@example.com", display_name: "Alice" }] });
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 1, email: "alice@example.com", display_name: "Alice" }],
+    });
 
     const req = { cookies: { token } };
     const res = mockRes();

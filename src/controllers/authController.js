@@ -1,4 +1,3 @@
-const crypto = require("crypto");
 const db = require("../db/connection");
 const hash = require("../utils/hash");
 const jwt = require("../utils/jwt");
@@ -10,12 +9,12 @@ function setTokenCookies(res, accessToken, refreshToken) {
   res.cookie("token", accessToken, {
     httpOnly: true,
     sameSite: "lax",
-    maxAge: 15 * 60 * 1000, // 15 min
+    maxAge: 15 * 60 * 1000,
   });
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
     sameSite: "lax",
-    path: "/api/auth/refresh", // only sent to the refresh endpoint
+    path: "/api/auth/refresh",
     maxAge: REFRESH_DAYS * 24 * 60 * 60 * 1000,
   });
 }
@@ -24,7 +23,6 @@ async function issueTokens(res, userId) {
   const accessToken = jwt.signAccess({ id: userId });
   const refreshToken = jwt.signRefresh({ id: userId });
 
-  // Persist refresh token
   const expiresAt = new Date(Date.now() + REFRESH_DAYS * 24 * 60 * 60 * 1000);
   await db.query(
     "INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1,$2,$3)",
@@ -36,15 +34,13 @@ async function issueTokens(res, userId) {
 }
 
 module.exports = {
-  async signup(req, res) {
+  async signup(req, res, next) {
     try {
       const { email, password, displayName } = req.body;
       if (!email || !password)
         return next(new AppError("Email and password are required", 400));
 
-      const existing = await db.query("SELECT id FROM users WHERE email=$1", [
-        email,
-      ]);
+      const existing = await db.query("SELECT id FROM users WHERE email=$1", [email]);
       if (existing.rows.length > 0)
         return next(new AppError("Email already in use", 400));
 
@@ -56,26 +52,19 @@ module.exports = {
 
       const user = result.rows[0];
       await issueTokens(res, user.id);
-      res.json({
-        id: user.id,
-        email: user.email,
-        displayName: user.display_name,
-      });
+      res.json({ id: user.id, email: user.email, displayName: user.display_name });
     } catch (err) {
-      console.error("signup error:", err);
-      res.status(500).json({ error: "Server error" });
+      next(err);
     }
   },
 
-  async login(req, res) {
+  async login(req, res, next) {
     try {
       const { email, password } = req.body;
       if (!email || !password)
         return next(new AppError("Email and password are required", 400));
 
-      const result = await db.query("SELECT * FROM users WHERE email=$1", [
-        email,
-      ]);
+      const result = await db.query("SELECT * FROM users WHERE email=$1", [email]);
       if (result.rows.length === 0)
         return next(new AppError("Invalid credentials", 400));
 
@@ -84,30 +73,24 @@ module.exports = {
       if (!valid) return next(new AppError("Invalid credentials", 400));
 
       await issueTokens(res, user.id);
-      res.json({
-        id: user.id,
-        email: user.email,
-        displayName: user.display_name,
-      });
+      res.json({ id: user.id, email: user.email, displayName: user.display_name });
     } catch (err) {
-      console.error("login error:", err);
-      res.status(500).json({ error: "Server error" });
+      next(err);
     }
   },
 
-  async refresh(req, res) {
+  async refresh(req, res, next) {
     try {
       const token = req.cookies.refresh_token;
-      if (!token) return res.status(401).json({ error: "No refresh token" });
+      if (!token) return next(new AppError("No refresh token", 401));
 
       let decoded;
       try {
         decoded = jwt.verifyRefresh(token);
       } catch {
-        return res.status(401).json({ error: "Invalid refresh token" });
+        return next(new AppError("Invalid refresh token", 401));
       }
 
-      // Check token exists in DB and isn't expired
       const row = await db.query(
         "SELECT * FROM refresh_tokens WHERE token=$1 AND expires_at > NOW()",
         [token],
@@ -115,11 +98,9 @@ module.exports = {
       if (row.rows.length === 0)
         return next(new AppError("Refresh token revoked or expired", 401));
 
-      // Rotate: delete old, issue new
       await db.query("DELETE FROM refresh_tokens WHERE token=$1", [token]);
       await issueTokens(res, decoded.id);
 
-      // Return fresh user info
       const user = await db.query(
         "SELECT id, email, display_name FROM users WHERE id=$1",
         [decoded.id],
@@ -130,8 +111,7 @@ module.exports = {
         displayName: user.rows[0].display_name,
       });
     } catch (err) {
-      console.error("refresh error:", err);
-      res.status(500).json({ error: "Server error" });
+      next(err);
     }
   },
 
@@ -144,12 +124,11 @@ module.exports = {
       res.clearCookie("token");
       res.clearCookie("refresh_token", { path: "/api/auth/refresh" });
       res.json({ success: true });
-    } catch (err) {
+    } catch {
       res.json({ success: true }); // always succeed on logout
     }
   },
 
-  /** Returns the current user if their access token is valid */
   async me(req, res) {
     try {
       const token = req.cookies.token;
@@ -169,10 +148,8 @@ module.exports = {
       if (!result.rows.length) return res.json({ user: null });
 
       const u = result.rows[0];
-      res.json({
-        user: { id: u.id, email: u.email, displayName: u.display_name },
-      });
-    } catch (err) {
+      res.json({ user: { id: u.id, email: u.email, displayName: u.display_name } });
+    } catch {
       res.json({ user: null });
     }
   },
