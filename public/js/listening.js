@@ -1,24 +1,11 @@
 import { addMessage, speak, stripMarkdown } from "./chat.js";
+import { langMap } from "./languages.js";
 
 const listenBtn = document.getElementById("listen-practice-btn");
 const listenResultSpan = document.getElementById("listen-result");
 
 let recognition = null;
 let isListeningPracticeActive = false;
-
-const langMap = {
-  Spanish: "es-ES",
-  French: "fr-FR",
-  German: "de-DE",
-  Italian: "it-IT",
-  Japanese: "ja-JP",
-  Korean: "ko-KR",
-  "Mandarin Chinese": "zh-CN",
-  English: "en-US",
-  Portuguese: "pt-BR",
-  Arabic: "ar-SA",
-  Hindi: "hi-IN",
-};
 
 if ("webkitSpeechRecognition" in window) {
   recognition = new webkitSpeechRecognition();

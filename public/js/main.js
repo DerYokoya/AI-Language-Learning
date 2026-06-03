@@ -11,6 +11,7 @@ import {
 } from "./chat.js";
 import { initFlashcards } from "./flashcards.js";
 import { startListeningPractice } from "./listening.js";
+import { langMap } from "./languages.js";
 
 // ─── Auth bootstrap ────────────────────────────────────────────────────────────
 // window.currentUser is set by auth.js before main.js is imported (index.html).
@@ -437,20 +438,6 @@ export async function generateRoleplayIntro(
       addMessage(data.reply, "ai");
       // Speak the message if auto-read is enabled
       if (autoReadEnabled) {
-        const { speak } = await import("./chat.js");
-        const langMap = {
-          Spanish: "es-ES",
-          French: "fr-FR",
-          German: "de-DE",
-          Italian: "it-IT",
-          Japanese: "ja-JP",
-          Korean: "ko-KR",
-          "Mandarin Chinese": "zh-CN",
-          English: "en-US",
-          Portuguese: "pt-BR",
-          Arabic: "ar-SA",
-          Hindi: "hi-IN",
-        };
         speak(data.reply, langMap[targetLanguage]);
       }
     }

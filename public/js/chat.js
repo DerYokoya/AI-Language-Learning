@@ -6,6 +6,7 @@ import {
   saveCurrentChat,
   persistMessage,
 } from "./main.js";
+import { langMap } from "./languages.js";
 
 const chatWindow = document.getElementById("chat-window");
 const userInput = document.getElementById("user-input");
@@ -18,20 +19,6 @@ let lastAIMessage = "";
 let recognition = null;
 let currentMode = "conversation";
 let currentScenario = "restaurant";
-
-const langMap = {
-  Spanish: "es-ES",
-  French: "fr-FR",
-  German: "de-DE",
-  Italian: "it-IT",
-  Japanese: "ja-JP",
-  Korean: "ko-KR",
-  "Mandarin Chinese": "zh-CN",
-  English: "en-US",
-  Portuguese: "pt-BR",
-  Arabic: "ar-SA",
-  Hindi: "hi-IN",
-};
 
 const roleplayScenarios = {
   restaurant: "restaurant (ordering food, asking about menu, paying bill)",
