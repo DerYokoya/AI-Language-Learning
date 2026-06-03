@@ -77,7 +77,7 @@ When logged in, all chat sessions, messages, flashcards, and settings sync to a 
 - Guests use browser `localStorage`; authenticated users sync to the cloud.
 
 ### Customizable Experience
-- Languages: Spanish, French, German, Italian, Japanese, Korean, and Mandarin Chinese.
+- Languages: Spanish, French, German, Italian, Japanese, Korean, and Mandarin Chinese, Portuguese, Modern Standard Arabic, Hindi.
 - Difficulty levels: Beginner, Intermediate, Advanced.
 - Light and dark theme toggle.
 
