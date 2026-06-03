@@ -8,7 +8,7 @@ export const langMap = {
   "Mandarin Chinese": "zh-CN",
   English: "en-US",
   Portuguese: "pt-BR",
-  Arabic: "ar-SA",
+  "Modern Standard Arabic": "ar-SA",
   Hindi: "hi-IN",
 };
 
