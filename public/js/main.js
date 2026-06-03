@@ -1,7 +1,6 @@
 // Main application entry point
 import { storage } from "./storage.js";
 import {
-  initChat,
   sendMessage,
   addMessage,
   setCurrentMode,
@@ -126,11 +125,14 @@ function saveChatSessions() {
     // "chat-177…" would crash PostgreSQL with "invalid input syntax for integer".
     const idIsServerInteger = /^\d+$/.test(String(currentChat.id));
     if (!idIsServerInteger) {
-      console.warn("saveChatSessions: skipping API call — id is not a server integer:", currentChat.id);
+      console.warn(
+        "saveChatSessions: skipping API call — id is not a server integer:",
+        currentChat.id,
+      );
       return;
     }
     apiUpdateChat(currentChat).catch((e) =>
-      console.warn("Failed to sync chat metadata to server:", e)
+      console.warn("Failed to sync chat metadata to server:", e),
     );
   }
 }
@@ -171,7 +173,8 @@ export function saveCurrentChat() {
     let sender = "ai";
     if (msg.classList.contains("user")) sender = "user";
     else if (msg.classList.contains("system-error")) sender = "system-error";
-    else if (msg.classList.contains("system-success")) sender = "system-success";
+    else if (msg.classList.contains("system-success"))
+      sender = "system-success";
 
     chatMessages.push({
       sender,
@@ -192,7 +195,10 @@ export async function persistMessage(sender, text, html) {
   if (sender !== "user" && sender !== "ai") return;
   // Guard: never send a guest string-id to the server — it would crash PostgreSQL.
   if (!/^\d+$/.test(String(currentChat.id))) {
-    console.warn("persistMessage: skipping — id is not a server integer:", currentChat.id);
+    console.warn(
+      "persistMessage: skipping — id is not a server integer:",
+      currentChat.id,
+    );
     return;
   }
   try {
@@ -210,9 +216,9 @@ export async function loadChatSession(chatId) {
   const nextChat = getChatById(chatId);
   if (!nextChat) return;
 
-  currentChatId = nextChat.id;  // always a server integer string at this point
+  currentChatId = nextChat.id; // always a server integer string at this point
   currentChat = nextChat;
-  storage.setItem("currentChatId", currentChatId);  // safe to persist now
+  storage.setItem("currentChatId", currentChatId); // safe to persist now
   updateChatSelect();
 
   const chatWindow = document.getElementById("chat-window");
@@ -247,7 +253,10 @@ export async function loadChatSession(chatId) {
       currentChat.history = history;
       if (history.length) loadChatHistory(history);
     } catch (e) {
-      console.warn("Could not load messages from server, using local cache:", e);
+      console.warn(
+        "Could not load messages from server, using local cache:",
+        e,
+      );
       if (currentChat.history && currentChat.history.length)
         loadChatHistory(currentChat.history);
     }
@@ -304,8 +313,8 @@ function renameCurrentChat() {
 }
 
 function generateRandomChatCode() {
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const numbers = '0123456789';
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const numbers = "0123456789";
   const letter1 = letters[Math.floor(Math.random() * letters.length)];
   const letter2 = letters[Math.floor(Math.random() * letters.length)];
   const number = numbers[Math.floor(Math.random() * numbers.length)];
@@ -318,7 +327,7 @@ async function initializeChatSessions() {
     try {
       const serverChats = await apiFetchChats();
       allChats = serverChats.map((row) => ({
-        id: String(row.id),          // always a numeric string like "42"
+        id: String(row.id), // always a numeric string like "42"
         title: row.title,
         mode: row.mode || "conversation",
         language: row.language || "Spanish",
@@ -327,7 +336,7 @@ async function initializeChatSessions() {
         autoReadEnabled: row.auto_read_enabled !== false,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
-        history: [],                 // messages loaded lazily in loadChatSession
+        history: [], // messages loaded lazily in loadChatSession
         flashcards: {},
       }));
       // Overwrite any stale localStorage data (which may still hold old
@@ -335,7 +344,10 @@ async function initializeChatSessions() {
       storage.removeItem("currentChatId");
       saveChatSessionsLocal();
     } catch (e) {
-      console.warn("Could not fetch chats from server, falling back to localStorage:", e);
+      console.warn(
+        "Could not fetch chats from server, falling back to localStorage:",
+        e,
+      );
       allChats = loadChatSessionsLocal();
     }
   } else {
@@ -360,9 +372,6 @@ async function initializeChatSessions() {
 const listenBtn = document.getElementById("listen-practice-btn");
 if (listenBtn) {
   listenBtn.addEventListener("click", startListeningPractice);
-  console.log("✅ Listening practice button initialized");
-} else {
-  console.warn("⚠️ Listening practice button not found");
 }
 
 // Global state
@@ -583,7 +592,6 @@ function loadAllSettings() {
   ttsToggleBtn.classList.toggle("tts-on", autoReadEnabled);
 }
 
-
 // Save settings when they change
 languageSelect.addEventListener("change", () => {
   saveCurrentChat();
@@ -698,7 +706,9 @@ if (deleteChatBtn) {
     if (!confirm(`Delete "${currentChat.title}"?`)) return;
 
     if (window.currentUser) {
-      try { await apiDeleteChat(currentChat.id); } catch (e) {
+      try {
+        await apiDeleteChat(currentChat.id);
+      } catch (e) {
         console.warn("Failed to delete chat on server:", e);
       }
     }
@@ -745,48 +755,50 @@ if (clearChatBtn) {
 // (and vice-versa).
 function resetChatState() {
   // Tear down any in-memory state that belongs to the previous session.
-  currentChat    = null;
-  currentChatId  = null;
-  allChats       = [];
+  currentChat = null;
+  currentChatId = null;
+  allChats = [];
   conversationHistory.length = 0;
   const chatWindow = document.getElementById("chat-window");
   if (chatWindow) chatWindow.innerHTML = "";
 }
 
-document.addEventListener("authchange", async ({ detail: { justLoggedIn, wasGuest, user } }) => {
-  const loggedOut = !user;
+document.addEventListener(
+  "authchange",
+  async ({ detail: { justLoggedIn, wasGuest, user } }) => {
+    const loggedOut = !user;
 
-  if (loggedOut) {
-    // User signed out — wipe account data and start a fresh guest session.
-    storage.removeItem("currentChatId");
-    storage.removeItem("chatSessions");
-    resetChatState();
-    await initializeChatSessions();
-    loadAllSettings();
-    return;
-  }
-
-  if (justLoggedIn) {
-    // User just signed in (possibly switching from a guest session).
-    // Discard any guest IDs before touching the server.
-    storage.removeItem("currentChatId");
-    if (wasGuest) {
-      // Don't carry guest chats over — clear local cache entirely.
+    if (loggedOut) {
+      // User signed out — wipe account data and start a fresh guest session.
+      storage.removeItem("currentChatId");
       storage.removeItem("chatSessions");
+      resetChatState();
+      await initializeChatSessions();
+      loadAllSettings();
+      return;
     }
-    resetChatState();
-    await initializeChatSessions();
-    loadAllSettings();
-  }
-  // If it's just a silent token refresh (justLoggedIn === false, user !== null)
-  // we do nothing — the session is already correctly loaded.
-});
+
+    if (justLoggedIn) {
+      // User just signed in (possibly switching from a guest session).
+      // Discard any guest IDs before touching the server.
+      storage.removeItem("currentChatId");
+      if (wasGuest) {
+        // Don't carry guest chats over — clear local cache entirely.
+        storage.removeItem("chatSessions");
+      }
+      resetChatState();
+      await initializeChatSessions();
+      loadAllSettings();
+    }
+    // If it's just a silent token refresh (justLoggedIn === false, user !== null)
+    // we do nothing — the session is already correctly loaded.
+  },
+);
 
 // First load — auth.js has already set window.currentUser before this module
 // runs (index.html awaits initAuth() then dynamically imports main.js).
 (async () => {
   await initializeChatSessions();
-  initChat();
   initFlashcards();
   loadAllSettings();
 })();

@@ -3,8 +3,6 @@ const client = require("../services/openrouter");
 module.exports = {
   async ask(req, res) {
     try {
-      console.log("Received request:", req.body);
-
       const { prompt, targetLanguage, difficulty } = req.body;
 
       const fullPrompt = `
@@ -37,12 +35,9 @@ module.exports = {
       });
 
       const reply = completion.choices[0].message.content;
-
-      console.log("AI reply:", reply);
-
       res.json({ reply });
     } catch (err) {
-      console.error("AI ERROR:", err);
+      console.error("AI request failed:", err);
       res.status(500).json({ error: "AI request failed" });
     }
   }

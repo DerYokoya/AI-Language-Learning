@@ -284,10 +284,6 @@ if ("webkitSpeechRecognition" in window) {
   recognition.continuous = false;
   recognition.interimResults = false;
 
-  recognition.onstart = () => console.log("🎤 Voice recognition started");
-  recognition.onend = () => console.log("🛑 Voice recognition ended");
-  recognition.onerror = (e) => console.log("❌ Speech error:", e.error);
-
   recognition.onresult = function (event) {
     const transcript = event.results[0][0].transcript;
     userInput.value = transcript;
@@ -332,7 +328,3 @@ ttsStopBtn.addEventListener("click", () => {
   speechSynthesis.cancel();
   addMessage("🔇 Voice playback stopped.", "system-success");
 });
-
-export function initChat() {
-  console.log("Chat module initialized with learning modes");
-}
