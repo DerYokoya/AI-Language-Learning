@@ -27,7 +27,7 @@ module.exports = {
       `;
 
       const completion = await client.chat.completions.create({
-        model: "openai/gpt-oss-120b:free",
+        model: "openrouter/free",
         messages: [
           { role: "system", content: "You are a helpful language tutor." },
           { role: "user", content: fullPrompt },
