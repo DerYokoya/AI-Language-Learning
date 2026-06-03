@@ -1,4 +1,5 @@
 const client = require("../services/openrouter");
+const AppError = require("../utils/AppError");
 
 module.exports = {
   async ask(req, res) {
@@ -38,7 +39,7 @@ module.exports = {
       res.json({ reply });
     } catch (err) {
       console.error("AI request failed:", err);
-      res.status(500).json({ error: "AI request failed" });
+      next(new AppError("AI request failed", 503));
     }
-  }
+  },
 };

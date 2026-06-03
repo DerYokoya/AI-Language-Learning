@@ -8,8 +8,9 @@ const userRoutes = require("./src/routes/users");
 const chatRoutes = require("./src/routes/chats");
 const flashcardRoutes = require("./src/routes/flashcards");
 const storageRoutes = require("./src/routes/storage");
-
+const errorHandler = require("./src/middleware/errorHandler");
 const app = express();
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -21,6 +22,7 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/storage", storageRoutes);
 
 app.use(express.static("public"));
+app.use(errorHandler)
 
 app.get("/index", (req, res) => {
   res.sendFile(__dirname + "/public/index.html");
