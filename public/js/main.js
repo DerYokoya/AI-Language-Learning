@@ -447,6 +447,9 @@ export async function generateRoleplayIntro(
           Korean: "ko-KR",
           "Mandarin Chinese": "zh-CN",
           English: "en-US",
+          Portuguese: "pt-BR",
+          Arabic: "ar-SA",
+          Hindi: "hi-IN",
         };
         speak(data.reply, langMap[targetLanguage]);
       }

@@ -1,5 +1,11 @@
-import { storage } from './storage.js';
-import { autoReadEnabled, conversationHistory, setMode, saveCurrentChat, persistMessage } from './main.js';
+import { storage } from "./storage.js";
+import {
+  autoReadEnabled,
+  conversationHistory,
+  setMode,
+  saveCurrentChat,
+  persistMessage,
+} from "./main.js";
 
 const chatWindow = document.getElementById("chat-window");
 const userInput = document.getElementById("user-input");
@@ -22,6 +28,9 @@ const langMap = {
   Korean: "ko-KR",
   "Mandarin Chinese": "zh-CN",
   English: "en-US",
+  Portuguese: "pt-BR",
+  Arabic: "ar-SA",
+  Hindi: "hi-IN",
 };
 
 const roleplayScenarios = {
@@ -30,9 +39,11 @@ const roleplayScenarios = {
   hotel: "hotel (check-in, room service, complaints, check-out)",
   shopping: "shopping mall (asking prices, sizes, returns, bargaining)",
   doctor: "doctor's office (symptoms, appointments, prescriptions)",
-  jobInterview: "job interview (自我介绍, qualifications, experience, questions)",
+  jobInterview:
+    "job interview (自我介绍, qualifications, experience, questions)",
   taxi: "taxi (directions, payment, destinations)",
-  phoneCall: "phone call (making appointments, customer service, leaving messages)"
+  phoneCall:
+    "phone call (making appointments, customer service, leaving messages)",
 };
 
 // Mode getters/setters
@@ -55,20 +66,25 @@ export function setCurrentScenario(scenario) {
 // Mode-specific prompt builder
 function getModePrompt(userMessage, targetLanguage, difficulty) {
   const basePrompt = `You are a ${targetLanguage} language tutor. The student is at ${difficulty} level. `;
-  
-  switch(currentMode) {
+
+  switch (currentMode) {
     case "grammar":
-      return basePrompt + `This is GRAMMAR CORRECTION mode. Focus on correcting the student's grammar, explaining the rule, and providing the correct version. 
+      return (
+        basePrompt +
+        `This is GRAMMAR CORRECTION mode. Focus on correcting the student's grammar, explaining the rule, and providing the correct version. 
       Student's message: "${userMessage}"
       
       Respond in this format:
       📝 **Correction**: [corrected version]
       📖 **Rule Explanation**: [simple grammar rule explanation]
       💡 **Tip**: [helpful tip to remember this rule]
-      🎯 **Practice**: [short exercise for the student]`;
-      
+      🎯 **Practice**: [short exercise for the student]`
+      );
+
     case "vocabulary":
-      return basePrompt + `This is VOCABULARY BUILDING mode. Focus on teaching new words, synonyms, antonyms, and usage.
+      return (
+        basePrompt +
+        `This is VOCABULARY BUILDING mode. Focus on teaching new words, synonyms, antonyms, and usage.
       Student's message: "${userMessage}"
       
       If the student used a word incorrectly or asks about a word, respond in this format:
@@ -80,24 +96,32 @@ function getModePrompt(userMessage, targetLanguage, difficulty) {
       🔄 **Related Words**: [synonyms, antonyms, or related vocabulary]
       ✍️ **Practice**: [use this word in a sentence challenge]
       
-      If the student just wrote a normal message, teach 2-3 new relevant vocabulary words based on their message.`;
-      
+      If the student just wrote a normal message, teach 2-3 new relevant vocabulary words based on their message.`
+      );
+
     case "roleplay":
-      const scenario = roleplayScenarios[currentScenario] || roleplayScenarios.restaurant;
-      return basePrompt + `This is ROLEPLAY mode. Scenario: ${scenario}.
+      const scenario =
+        roleplayScenarios[currentScenario] || roleplayScenarios.restaurant;
+      return (
+        basePrompt +
+        `This is ROLEPLAY mode. Scenario: ${scenario}.
       You are playing a character appropriate for this scenario (waiter, receptionist, doctor, etc.).
       Stay in character. Respond naturally as that person would.
       Keep your responses to 1-2 sentences so the student can practice back-and-forth conversation.
       Student says: "${userMessage}"
       
-      Respond as your character naturally would. After every 3 exchanges, provide a small feedback tip in (parentheses).`;
-      
+      Respond as your character naturally would. After every 3 exchanges, provide a small feedback tip in (parentheses).`
+      );
+
     default: // conversation mode
-      return basePrompt + `This is CONVERSATION PRACTICE mode. Have a natural conversation with the student.
+      return (
+        basePrompt +
+        `This is CONVERSATION PRACTICE mode. Have a natural conversation with the student.
       Correct their mistakes gently. Ask follow-up questions to keep the conversation going.
       Student's message: "${userMessage}"
       
-      Respond naturally, then ask a relevant follow-up question. Keep your response encouraging and educational.`;
+      Respond naturally, then ask a relevant follow-up question. Keep your response encouraging and educational.`
+      );
   }
 }
 
@@ -108,7 +132,9 @@ speechSynthesis.onvoiceschanged = () => {
 };
 
 function getVoiceForLang(langCode) {
-  const voices = cachedVoices.length ? cachedVoices : speechSynthesis.getVoices();
+  const voices = cachedVoices.length
+    ? cachedVoices
+    : speechSynthesis.getVoices();
   const exact = voices.find((v) => v.lang === langCode);
   if (exact) return exact;
   const prefix = langCode.split("-")[0];
@@ -154,7 +180,7 @@ export async function speak(text, langCode) {
   const clean = stripMarkdown(text);
   const utter = new SpeechSynthesisUtterance(clean);
   utter.lang = langCode;
-  
+
   const voice = getVoiceForLang(langCode);
   if (voice) utter.voice = voice;
 
@@ -170,10 +196,12 @@ export function addMessage(text, sender) {
   }
 
   const msg = document.createElement("div");
-  
+
   if (sender === "user") msg.classList.add("message", "user");
-  else if (sender === "system-error") msg.classList.add("message", "system-error");
-  else if (sender === "system-success") msg.classList.add("message", "system-success");
+  else if (sender === "system-error")
+    msg.classList.add("message", "system-error");
+  else if (sender === "system-success")
+    msg.classList.add("message", "system-success");
   else msg.classList.add("message", "ai");
 
   msg.innerHTML = marked.parse(text);
@@ -189,16 +217,18 @@ export function addMessage(text, sender) {
 }
 
 export function loadChatHistory(history = null) {
-  const messages = history || (() => {
-    const saved = storage.getItem("chatHistory");
-    if (!saved) return [];
-    try {
-      return JSON.parse(saved);
-    } catch (err) {
-      console.warn("Failed to parse legacy chat history", err);
-      return [];
-    }
-  })();
+  const messages =
+    history ||
+    (() => {
+      const saved = storage.getItem("chatHistory");
+      if (!saved) return [];
+      try {
+        return JSON.parse(saved);
+      } catch (err) {
+        console.warn("Failed to parse legacy chat history", err);
+        return [];
+      }
+    })();
 
   messages.forEach((m) => {
     const msg = document.createElement("div");
@@ -297,14 +327,14 @@ userInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") sendMessage();
 });
 
-
 micBtn.addEventListener("click", () => {
   // If listening practice is active, let listening.js handle it
   if (window.listeningPracticeActive) {
     return; // Don't process here, let listening.js handle it
   }
-  
-  if (!recognition) return alert("Speech recognition not supported in this browser");
+
+  if (!recognition)
+    return alert("Speech recognition not supported in this browser");
   const targetLanguage = document.getElementById("language-select").value;
   recognition.lang = langMap[targetLanguage] || "en-US";
   micBtn.classList.add("recording");
