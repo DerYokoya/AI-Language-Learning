@@ -82,7 +82,7 @@ header button:hover,
   background: #f8f9fa;
   padding: 4px 12px;
   border-radius: 40px;
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .chat-select-wrap {
@@ -121,6 +121,7 @@ header button:hover,
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  margin-left: auto;
 }
 
 .mode-btn.active-mode {
@@ -574,13 +575,19 @@ body.auth-loaded #auth-nav:empty::after {
 @media (max-width: 780px) {
   header {
     flex-direction: column;
-    align-items: flex-end;   /* Forces all header children to the right */
+    align-items: flex-start;   /* Keep header children aligned to the left on small screens */
   }
 
   .chat-session-bar {
-    margin-left: auto;
-    justify-content: flex-end;
-    width: 100%; 
+    margin-left: 0;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  /* Ensure mode selector stays right-aligned on small screens */
+  .mode-selector {
+    align-self: flex-end;
+    margin-left: 0;
   }
 
   #auth-nav {
