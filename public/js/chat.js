@@ -368,7 +368,7 @@ if ("webkitSpeechRecognition" in window) {
     // Provide more actionable messages for common errors
     if (e.error === "network") {
       addMessage(
-        "⚠️ Speech recognition network error. The browser's speech service requires internet access — check your connection or browser network settings.",
+        "⚠️ Speech recognition network error. The browser's speech service requires internet access. Check your connection or browser network settings.",
         "system-error",
       );
     } else if (e.error === "not-allowed" || e.error === "permission-denied") {
@@ -383,7 +383,9 @@ if ("webkitSpeechRecognition" in window) {
       );
     } else {
       addMessage(
-        "⚠️ Speech recognition error: " + (e.error || "unknown") + ". Please check microphone permissions and try again.",
+        "⚠️ Speech recognition error: " +
+          (e.error || "unknown") +
+          ". Please check microphone permissions and try again.",
         "system-error",
       );
     }
