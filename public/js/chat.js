@@ -19,6 +19,7 @@ let lastAIMessage = "";
 let recognition = null;
 let currentMode = "conversation";
 let currentScenario = "restaurant";
+let isRecording = false;
 
 const roleplayScenarios = {
   restaurant: "restaurant (ordering food, asking about menu, paying bill)",
@@ -126,6 +127,48 @@ function getVoiceForLang(langCode) {
   if (exact) return exact;
   const prefix = langCode.split("-")[0];
   return voices.find((v) => v.lang.startsWith(prefix)) || null;
+}
+
+async function ensureMicAccess() {
+  // Check permissions API first when available
+  try {
+    if (navigator.permissions) {
+      const status = await navigator.permissions.query({ name: "microphone" });
+      if (status.state === "granted") return true;
+      if (status.state === "denied") {
+        addMessage(
+          "⚠️ Microphone permission is denied. Please enable it in your browser settings.",
+          "system-error",
+        );
+        return false;
+      }
+      // state === 'prompt' -> try getUserMedia to trigger prompt
+    }
+  } catch (e) {
+    // ignore and fall back to getUserMedia
+  }
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    addMessage(
+      "⚠️ Microphone access not available in this browser.",
+      "system-error",
+    );
+    return false;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // immediately stop tracks — we just wanted to confirm access
+    stream.getTracks().forEach((t) => t.stop());
+    return true;
+  } catch (err) {
+    console.error("getUserMedia error:", err);
+    addMessage(
+      "⚠️ Unable to access the microphone. Check permissions and that another app isn't using it.",
+      "system-error",
+    );
+    return false;
+  }
 }
 
 function waitForVoices() {
@@ -308,6 +351,42 @@ if ("webkitSpeechRecognition" in window) {
     const transcript = event.results[0][0].transcript;
     userInput.value = transcript;
     micBtn.classList.remove("recording");
+    isRecording = false;
+  };
+
+  recognition.onend = function () {
+    // Ensure UI resets when recognition stops (no speech or finished)
+    micBtn.classList.remove("recording");
+    isRecording = false;
+  };
+
+  recognition.onerror = function (e) {
+    micBtn.classList.remove("recording");
+    isRecording = false;
+    console.error("Speech recognition error:", e.error || e);
+
+    // Provide more actionable messages for common errors
+    if (e.error === "network") {
+      addMessage(
+        "⚠️ Speech recognition network error. The browser's speech service requires internet access — check your connection or browser network settings.",
+        "system-error",
+      );
+    } else if (e.error === "not-allowed" || e.error === "permission-denied") {
+      addMessage(
+        "⚠️ Microphone permission denied. Please allow microphone access in your browser.",
+        "system-error",
+      );
+    } else if (e.error === "no-speech") {
+      addMessage(
+        "⚠️ No speech detected. Try speaking more clearly or move closer to the mic.",
+        "system-error",
+      );
+    } else {
+      addMessage(
+        "⚠️ Speech recognition error: " + (e.error || "unknown") + ". Please check microphone permissions and try again.",
+        "system-error",
+      );
+    }
   };
 }
 
@@ -317,18 +396,44 @@ userInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") sendMessage();
 });
 
-micBtn.addEventListener("click", () => {
+micBtn.addEventListener("click", async () => {
   // If listening practice is active, let listening.js handle it
   if (window.listeningPracticeActive) {
     return; // Don't process here, let listening.js handle it
   }
 
-  if (!recognition)
-    return alert("Speech recognition not supported in this browser");
+  if (!recognition) {
+    alert("Speech recognition not supported in this browser");
+    return;
+  }
+
+  // Toggle recording: click to start, click again to stop
+  if (isRecording) {
+    try {
+      recognition.stop();
+    } catch (e) {
+      console.warn("Error stopping recognition:", e);
+    }
+    micBtn.classList.remove("recording");
+    isRecording = false;
+    return;
+  }
+
+  // Ensure microphone access before attempting to start recognition
+  const access = await ensureMicAccess();
+  if (!access) return;
+
   const targetLanguage = document.getElementById("language-select").value;
   recognition.lang = langMap[targetLanguage] || "en-US";
   micBtn.classList.add("recording");
-  recognition.start();
+  isRecording = true;
+  try {
+    recognition.start();
+  } catch (e) {
+    console.error("Failed to start speech recognition:", e);
+    micBtn.classList.remove("recording");
+    isRecording = false;
+  }
 });
 
 ttsReplayBtn.addEventListener("click", () => {
