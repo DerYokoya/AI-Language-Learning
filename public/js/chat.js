@@ -193,7 +193,8 @@ export function addMessage(text, sender) {
 
   msg.innerHTML = marked.parse(text);
   chatWindow.appendChild(msg);
-  chatWindow.scrollTop = chatWindow.scrollHeight;
+  // Smooth auto-scroll to bottom when new messages arrive
+  chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: "smooth" });
 
   if (sender === "user" || sender === "ai") {
     conversationHistory.push({ sender, text });
@@ -230,6 +231,8 @@ export function loadChatHistory(history = null) {
       });
     }
   });
+  // Jump to bottom immediately when loading history
+  chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: "auto" });
 }
 
 function showTyping() {
@@ -238,7 +241,7 @@ function showTyping() {
   typing.id = "typing-indicator";
   typing.innerHTML = `<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>`;
   chatWindow.appendChild(typing);
-  chatWindow.scrollTop = chatWindow.scrollHeight;
+  chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: "smooth" });
 }
 
 function hideTyping() {
