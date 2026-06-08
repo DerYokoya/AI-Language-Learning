@@ -537,11 +537,10 @@ header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
-  justify-content: flex-end;
+  margin-right: auto;  /* ← This pushes it to the left */
+  justify-content: flex-start;  /* ← Changed from flex-end */
   min-width: 160px;
   min-height: 40px;
-  /* Prevent layout shifts */
   flex-shrink: 0;
 }
 
