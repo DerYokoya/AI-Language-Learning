@@ -533,24 +533,21 @@ header {
 }
 
 #auth-nav {
-  /* Force space reservation even when empty */
-  display: flex !important;
-  min-width: 160px;
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
   justify-content: flex-end;
+  min-width: 160px;
+  min-height: 40px;
+  /* Prevent layout shifts */
+  flex-shrink: 0;
 }
 
 /* Hide the placeholder once auth loads */
 body.auth-loaded #auth-nav:empty::after {
   display: none;
-}
-
-/* CRITICAL FIX: Prevent button flicker on refresh */
-#auth-nav {
-  /* Reserve space before content loads */
-  min-width: 160px;
-  min-height: 40px;
-  /* Prevent layout shifts */
-  flex-shrink: 0;
 }
 
 /* Ensure the chat session bar has reserved space */
@@ -575,7 +572,7 @@ body.auth-loaded #auth-nav:empty::after {
 @media (max-width: 780px) {
   header {
     flex-direction: column;
-    align-items: flex-start;   /* Keep header children aligned to the left on small screens */
+    align-items: flex-start; /* Keep header children aligned to the left on small screens */
   }
 
   .chat-session-bar {
@@ -589,18 +586,6 @@ body.auth-loaded #auth-nav:empty::after {
     align-self: flex-end;
     margin-left: 0;
   }
-
-  #auth-nav {
-    align-self: flex-end;
-    margin-left: auto;
-  }
-}
-/* ─── Auth Nav ─────────────────────────────────────────────────────────────── */
-#auth-nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
 }
 
 .auth-user-name {
