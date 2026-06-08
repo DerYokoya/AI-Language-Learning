@@ -8,6 +8,7 @@ import {
   getCurrentScenario,
   setCurrentScenario,
   loadChatHistory,
+  speak,
 } from "./chat.js";
 import { initFlashcards } from "./flashcards.js";
 import { startListeningPractice } from "./listening.js";
@@ -432,14 +433,25 @@ export async function generateRoleplayIntro(
     const typingElem = document.getElementById("typing-indicator");
     if (typingElem) typingElem.remove();
 
+    if (!response.ok) {
+      throw new Error(`API responded with status ${response.status}`);
+    }
+
     const data = await response.json();
 
     if (data.reply) {
       addMessage(data.reply, "ai");
-      // Speak the message if auto-read is enabled
+      // Speak the message if auto-read is enabled - dynamically import to avoid circular dependency
       if (autoReadEnabled) {
-        speak(data.reply, langMap[targetLanguage]);
+        try {
+          const { speak } = await import("./chat.js");
+          speak(data.reply, langMap[targetLanguage]);
+        } catch (speakErr) {
+          console.warn("Could not speak message:", speakErr);
+        }
       }
+    } else {
+      throw new Error("No reply field in API response");
     }
   } catch (error) {
     // Remove typing indicator
@@ -463,11 +475,20 @@ export async function generateRoleplayIntro(
       phoneCall:
         "📞 Hello, you've reached Customer Service. How may I help you today?",
     };
-    addMessage(
-      introMessages[scenario] ||
-        `Let's practice ${scenario}! How can I help you?`,
-      "ai",
-    );
+    const fallbackMessage = introMessages[scenario] ||
+      `Let's practice ${scenario}! How can I help you?`;
+    
+    addMessage(fallbackMessage, "ai");
+    
+    // Try to speak the fallback message if auto-read is enabled
+    if (autoReadEnabled) {
+      try {
+        const { speak } = await import("./chat.js");
+        speak(fallbackMessage, langMap[targetLanguage]);
+      } catch (speakErr) {
+        console.warn("Could not speak fallback message:", speakErr);
+      }
+    }
   }
 }
 
@@ -648,6 +669,7 @@ if (modeButtons.roleplay) {
 }
 
 // Roleplay scenario selector
+// Roleplay scenario selector
 if (roleplaySelect) {
   roleplaySelect.addEventListener("change", async (e) => {
     const newScenario = e.target.value;
@@ -666,7 +688,10 @@ if (roleplaySelect) {
       const targetLanguage = document.getElementById("language-select").value;
       const difficulty = document.getElementById("difficulty-select").value;
 
-      await generateRoleplayIntro(newScenario, targetLanguage, difficulty);
+      // Add a small delay to ensure the mode is properly set
+      setTimeout(async () => {
+        await generateRoleplayIntro(newScenario, targetLanguage, difficulty);
+      }, 100);
     }
   });
 }
