@@ -1,0 +1,125 @@
+/* ─── CHAT CONTAINER ────────────────────────────────────────────────────────── */
+.chat-container {
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 70vh;
+  min-height: 500px;
+}
+
+#chat-window {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fafcff;
+}
+
+/* ─── MESSAGE BUBBLES ───────────────────────────────────────────────────────── */
+.message {
+  max-width: 80%;
+  padding: 10px 16px;
+  border-radius: 22px;
+  line-height: 1.45;
+  font-size: 15px;
+  animation: fadeIn 0.2s ease;
+  word-wrap: break-word;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+
+.user {
+  background: #0078ff;
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 5px;
+}
+
+.ai {
+  background: #e9ecef;
+  color: #1e2a3e;
+  align-self: flex-start;
+  border-bottom-left-radius: 5px;
+}
+
+/* ─── TYPING INDICATOR ──────────────────────────────────────────────────────── */
+.typing {
+  background: #e9ecef;
+  align-self: flex-start;
+  padding: 12px 18px;
+  border-radius: 24px;
+  display: flex;
+  gap: 5px;
+  width: fit-content;
+}
+
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  background: #8e9eae;
+  border-radius: 50%;
+  animation: blink 1.4s infinite both;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* ─── SYSTEM MESSAGES ───────────────────────────────────────────────────────── */
+.message.system-error {
+  background: #fff0f0;
+  color: #b91c1c;
+  border-left: 4px solid #dc2626;
+  font-style: normal;
+  align-self: center;
+  max-width: 90%;
+  text-align: center;
+  font-size: 13px;
+}
+
+.message.system-success {
+  background: #e6f9ed;
+  color: #0b5e2e;
+  border-left: 4px solid #16a34a;
+  align-self: center;
+  max-width: 90%;
+  text-align: center;
+  font-size: 13px;
+}
+
+/* ─── TABLES INSIDE MESSAGES ────────────────────────────────────────────────── */
+.message table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.message th,
+.message td {
+  border: 1px solid #dee2e6;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.message th {
+  background: #f1f3f5;
+  font-weight: 600;
+}
+
+.message tr:nth-child(even) td {
+  background: #f8f9fa;
+}
+
+.message tr:hover td {
+  background: #e9ecef;
+}

@@ -1,0 +1,128 @@
+/* ─── INPUT AREA ────────────────────────────────────────────────────────────── */
+.input-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid #eef2f6;
+  background: white;
+  flex-wrap: wrap;
+}
+
+#user-input {
+  flex: 3;
+  padding: 12px 16px;
+  border-radius: 40px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+#user-input:focus {
+  outline: none;
+  border-color: #0078ff;
+  box-shadow: 0 0 0 2px rgba(0, 120, 255, 0.2);
+}
+
+select {
+  padding: 10px 14px;
+  border-radius: 40px;
+  border: 1px solid #ced4da;
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ─── ACTION BUTTONS (shared base) ─────────────────────────────────────────── */
+#send-btn,
+#mic-btn,
+#tts-toggle-btn,
+#tts-replay-btn,
+#tts-stop-btn,
+#listen-practice-btn,
+#flashcard-btn,
+#theme-toggle-btn,
+#clear-chat-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 40px;
+  background: #f0f2f5;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ─── SEND BUTTON ───────────────────────────────────────────────────────────── */
+#send-btn {
+  background: #0078ff;
+  color: white;
+  box-shadow: 0 2px 6px rgba(0, 120, 255, 0.2);
+}
+#send-btn:hover {
+  background: #0066dd;
+  transform: scale(0.98);
+}
+
+/* ─── MIC BUTTON ────────────────────────────────────────────────────────────── */
+#mic-btn {
+  background: #f0f2f5;
+  font-size: 18px;
+  padding: 8px 16px;
+}
+#mic-btn.recording {
+  background: #ff4d4d;
+  color: white;
+  animation: pulse 1s infinite;
+}
+
+/* ─── TTS BUTTONS ───────────────────────────────────────────────────────────── */
+#tts-toggle-btn {
+  background: #f0f2f5;
+  color: #1a1a1a;
+}
+
+#tts-toggle-btn.tts-off {
+  background: #aaa;
+  color: #eee;
+}
+
+#tts-toggle-btn.tts-on {
+  background: #90ee90;
+  color: #1a472a;
+  box-shadow: 0 0 8px rgba(144, 238, 144, 0.5);
+}
+
+#tts-stop-btn {
+  background: #dc3545;
+  color: white;
+}
+
+#tts-replay-btn {
+  background: #6f42c1;
+  color: white;
+}
+
+/* ─── FEATURE BUTTONS ───────────────────────────────────────────────────────── */
+#listen-practice-btn {
+  background: #20c997;
+  color: white;
+}
+
+#flashcard-btn {
+  background: #8b5cf6;
+  color: white;
+}
+
+#theme-toggle-btn {
+  background: #343a40;
+  color: white;
+}
+
+#clear-chat-btn {
+  background: #ff6b6b;
+  color: white;
+}

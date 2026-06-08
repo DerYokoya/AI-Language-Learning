@@ -1,0 +1,134 @@
+/* ─── DARK MODE ─────────────────────────────────────────────────────────────── */
+body.dark {
+  background: #121212;
+  color: #f5f5f5;
+}
+
+/* Layout surfaces */
+body.dark header,
+body.dark .chat-container,
+body.dark .input-area,
+body.dark #chat-window {
+  background: #1e1e2f;
+  border-color: #2c2c3a;
+}
+
+/* Messages */
+body.dark .message.user {
+  background: #2c3e66;
+  color: white;
+}
+
+body.dark .message.ai,
+body.dark .typing {
+  background: #2a2a3c;
+  color: #eef2ff;
+}
+
+body.dark .message.system-error {
+  background: #3b1e1e;
+  color: #ffa2a2;
+  border-left-color: #ff6b6b;
+}
+
+body.dark .message.system-success {
+  background: #1e3a2a;
+  color: #b2ffcf;
+  border-left-color: #4ade80;
+}
+
+/* Tables inside messages */
+body.dark .message th {
+  background: #2c2c3a;
+  color: #eef2ff;
+  border-color: #444;
+}
+
+body.dark .message td {
+  background: #252535;
+  color: #eef2ff;
+  border-color: #444;
+}
+
+body.dark .message tr:nth-child(even) td {
+  background: #222232;
+}
+
+body.dark .message tr:hover td {
+  background: #353548;
+}
+
+/* Header buttons */
+body.dark header button,
+body.dark .chat-session-bar button,
+body.dark .mode-btn {
+  background: #2c2c3a;
+  color: #ddd;
+}
+
+/* Chat session bar */
+body.dark .chat-session-bar {
+  background: #2c2c3a;
+}
+
+body.dark .chat-select-wrap {
+  color: #ddd;
+}
+
+body.dark #chat-select {
+  background: #2a2a3a;
+  border-color: #444;
+  color: white;
+}
+
+/* Inputs & selects */
+body.dark #user-input,
+body.dark select {
+  background: #2a2a3a;
+  border-color: #444;
+  color: white;
+}
+
+/* TTS toggle button */
+body.dark #tts-toggle-btn {
+  background: #2c2c3a;
+  color: #ddd;
+}
+
+body.dark #tts-toggle-btn.tts-off {
+  background: #555;
+  color: #aaa;
+}
+
+body.dark #tts-toggle-btn.tts-on {
+  background: #2d6a2d;
+  color: #c8ffc8;
+  box-shadow: 0 0 8px rgba(45, 106, 45, 0.5);
+}
+
+/* Auth modal */
+body.dark .auth-modal {
+  background: #1e1e2e;
+  color: #e0e0ef;
+}
+
+body.dark .auth-form input {
+  background: #2a2a3e;
+  border-color: #3a3a5e;
+  color: #e0e0ef;
+}
+
+body.dark .auth-error {
+  background: #3a1a1a;
+  border-color: #8b2020;
+  color: #ff9090;
+}
+
+body.dark .auth-btn-ghost {
+  color: #c0c0d0;
+  border-color: #3a3a5e;
+}
+
+body.dark .auth-btn-ghost:hover {
+  background: #2a2a3e;
+}
