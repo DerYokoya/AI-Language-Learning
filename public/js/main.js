@@ -669,7 +669,6 @@ if (modeButtons.roleplay) {
 }
 
 // Roleplay scenario selector
-// Roleplay scenario selector
 if (roleplaySelect) {
   roleplaySelect.addEventListener("change", async (e) => {
     const newScenario = e.target.value;
