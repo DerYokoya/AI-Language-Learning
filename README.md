@@ -189,8 +189,15 @@ All API routes are prefixed with `/api`.
 ai-language-learning/
 ├── public/                   # Static frontend
 │   ├── index.html
-│   ├── styles.css
 │   ├── logo.svg / logo.ico
+│   ├── css/                  
+│   │   ├── main.css          # Main entry point (imports all below)
+│   │   ├── base.css          # Reset & base styles
+│   │   ├── dark.css          # Dark mode theme
+│   │   ├── auth.css          # Authentication modal styles
+│   │   ├── chat.css          # Chat window & message styles
+│   │   ├── input.css         # Input area & button styles
+│   │   └── header.css        # Header, nav, mode selector styles
 │   └── js/
 │       ├── main.js           # App entry point & UI logic
 │       ├── auth.js           # Authentication flow

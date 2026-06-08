@@ -188,8 +188,15 @@ Toutes les routes API sont préfixées par `/api`.
 ai-language-learning/
 ├── public/                   # Interface statique
 │   ├── index.html
-│   ├── styles.css
 │   ├── logo.svg / logo.ico
+│   ├── css/                  
+│   │   ├── main.css          # Fichier principal (importe tous les fichiers ci-dessous)
+│   │   ├── base.css          # Réinitialisation et styles de base
+│   │   ├── dark.css          # Thème du mode sombre
+│   │   ├── auth.css          # Styles de la fenêtre modale d'authentification
+│   │   ├── chat.css          # Styles de la fenêtre de chat et des messages
+│   │   ├── input.css         # Styles des zones de saisie et des boutons
+│   │   └── header.css        # Styles de l'en-tête, de la navigation et du sélecteur de mode
 │   └── js/
 │       ├── main.js           # Point d'entrée de l'application et logique de l'interface utilisateur
 │       ├── auth.js           # Flux d'authentification
