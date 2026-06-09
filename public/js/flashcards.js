@@ -450,5 +450,8 @@ function startFlashcardMode(cards, newlyAdded = 0) {
 
 export function initFlashcards() {
   const flashcardBtn = document.getElementById("flashcard-btn");
-  flashcardBtn.addEventListener("click", generateFlashcards);
+  flashcardBtn.addEventListener("click", () => {
+    document.getElementById("activities-menu")?.classList.remove("open");
+    generateFlashcards();
+  });
 }

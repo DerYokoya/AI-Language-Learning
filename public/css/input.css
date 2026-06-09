@@ -42,7 +42,7 @@ select {
 #listen-practice-btn,
 #flashcard-btn,
 #theme-toggle-btn,
-#clear-chat-btn {
+#cloze-btn {
   padding: 10px 18px;
   border: none;
   border-radius: 40px;
@@ -122,7 +122,7 @@ select {
   color: white;
 }
 
-#clear-chat-btn {
-  background: #ff6b6b;
+#cloze-btn {
+  background: #5b6af0;
   color: white;
 }

@@ -1,70 +1,99 @@
-/* ─── HEADER & TOP BUTTONS ──────────────────────────────────────────────────── */
+/* ─── HEADER SHELL ───────────────────────────────────────────────────────────── */
 header {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   margin-bottom: 20px;
   background: white;
-  padding: 12px 20px;
+  padding: 14px 20px;
   border-radius: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  /* Anti-flicker: reserve header space BEFORE any JS runs */
-  min-height: 85px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-.logo-container {
+/* ─── SHARED ROW BASE ─────────────────────────────────────────────────────────── */
+.header-row {
   display: flex;
   align-items: center;
-  margin-right: 10px;
+  gap: 10px;
+  min-height: 40px;
+}
+
+/* ─── ROW 1: Logo · Auth · Chat bar ──────────────────────────────────────────── */
+.header-row--top {
+  /* auth-nav gets margin-right: auto to push chat bar to the far right */
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .logo {
-  width: 45px;
+  width: 42px;
   height: auto;
+  display: block;
 }
 
-header button,
-.chat-session-bar button,
-.mode-btn,
-#roleplay-scenario {
-  padding: 8px 16px;
-  border: none;
-  background: #f0f2f5;
-  color: #1a1a1a;
-  border-radius: 40px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-header button:hover,
-.chat-session-bar button:hover,
-.mode-btn:hover {
-  background: #e4e6eb;
-  transform: translateY(-1px);
-}
-
-#clear-chat-btn {
-  background: #ffe5e5;
-  color: #d32f2f;
-}
-
-#clear-chat-btn:hover {
-  background: #ffd0d0;
-}
-
-/* ─── CHAT SESSION BAR ──────────────────────────────────────────────────────── */
-.chat-session-bar {
+/* ─── AUTH NAV ────────────────────────────────────────────────────────────────── */
+#auth-nav {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-right: auto;   /* pushes chat-session-bar to the right */
+  min-width: 120px;
+  min-height: 36px;
+  flex-shrink: 0;
+}
+
+/* Skeleton placeholder while auth loads */
+#auth-nav:empty::after {
+  content: "•••";
+  opacity: 0.4;
+  font-size: 0.85rem;
+  padding: 6px 0;
+}
+body.auth-loaded #auth-nav:empty::after { display: none; }
+
+.auth-user-name {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.auth-guest-label {
+  font-size: 0.75rem;
+  opacity: 0.55;
+  font-style: italic;
+}
+.auth-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s, opacity 0.15s;
+}
+.auth-btn-primary { background: #5b6af0; color: #fff; }
+.auth-btn-primary:hover { background: #4a59d8; }
+.auth-btn-ghost {
+  background: transparent;
+  color: var(--btn-text, #555);
+  border: 1px solid var(--border-color, #ccc);
+}
+.auth-btn-ghost:hover { background: var(--btn-bg, #f0f0f0); }
+
+/* ─── CHAT SESSION BAR ────────────────────────────────────────────────────────── */
+.chat-session-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background: #f8f9fa;
-  padding: 4px 12px;
+  padding: 5px 12px;
   border-radius: 40px;
-  margin-left: 0;
   flex-shrink: 0;
 }
 
@@ -77,122 +106,167 @@ header button:hover,
 }
 
 #chat-select {
-  padding: 6px 10px;
+  padding: 5px 10px;
   border-radius: 20px;
   border: 1px solid #ddd;
   background: white;
   font-size: 13px;
+  max-width: 200px;
 }
 
-#new-chat-btn {
-  background: #e3f2fd;
-  color: #1976d2;
+#rename-chat-btn   { background: #fff3e0; color: #f57c00; }
+#new-chat-btn      { background: #e3f2fd; color: #1976d2; }
+#delete-chat-btn   { background: #ffebee; color: #c62828; }
+#clear-chat-btn { background: #f3e5f5; color: #8e24aa; }
+
+/* ─── ROW 2: Activities · Controls · Modes ───────────────────────────────────── */
+.header-row--bottom {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 8px;
 }
 
-#rename-chat-btn {
-  background: #fff3e0;
-  color: #f57c00;
+.header-row__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-#delete-chat-btn {
-  background: #ffebee;
-  color: #c62828;
+.header-row__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-wrap: wrap;
 }
 
-/* ─── MODE SELECTOR ─────────────────────────────────────────────────────────── */
+/* ─── SHARED BUTTON BASE ──────────────────────────────────────────────────────── */
+header button,
+.chat-session-bar button,
+.mode-btn,
+#roleplay-scenario {
+  padding: 7px 15px;
+  border: none;
+  background: #f0f2f5;
+  color: #1a1a1a;
+  border-radius: 40px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  white-space: nowrap;
+}
+
+header button:hover,
+.chat-session-bar button:hover,
+.mode-btn:hover {
+  background: #e4e6eb;
+  transform: translateY(-1px);
+}
+
+/* ─── ACTIVITIES DROPDOWN ────────────────────────────────────────────────────── */
+.activities-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+#activities-btn {
+  background: #5b6af0;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(91,106,240,0.35);
+}
+#activities-btn:hover {
+  background: #4a58d8;
+  box-shadow: 0 4px 10px rgba(91,106,240,0.4);
+}
+
+.activities-menu {
+  display: none;
+  flex-direction: column;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: var(--bg-color, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  overflow: hidden;
+  z-index: 200;
+  min-width: 200px;
+  animation: fadeSlideDown 0.15s ease;
+}
+.activities-menu.open { display: flex; }
+
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.activities-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 11px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-color, #1a1a1a);
+  transition: background 0.15s;
+  box-shadow: none;
+}
+.activities-menu button:not(:last-child) {
+  border-bottom: 1px solid var(--border-color, #f0f0f0);
+}
+.activities-menu button:hover {
+  background: var(--hover-bg, #f0f2f5);
+  transform: none;
+}
+
+/* ─── MODE SELECTOR ───────────────────────────────────────────────────────────── */
 .mode-selector {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
-  margin-left: auto;
 }
 
 .mode-btn.active-mode {
   background: #0078ff;
   color: white;
-  box-shadow: 0 2px 6px rgba(0, 120, 255, 0.3);
+  box-shadow: 0 2px 6px rgba(0,120,255,0.3);
 }
 
-.roleplay-container {
-  margin-left: 4px;
-}
+.roleplay-container { margin-left: 2px; }
 
 #roleplay-scenario {
   background: white;
   border: 1px solid #ddd;
-}
-
-/* ─── AUTH NAV ──────────────────────────────────────────────────────────────── */
-#auth-nav {
-  align-self: flex-end;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-right: auto;
-  justify-content: flex-start;
-  min-width: 160px;
-  min-height: 40px;
-  flex-shrink: 0;
-}
-
-/* Hide the placeholder once auth loads */
-body.auth-loaded #auth-nav:empty::after {
-  display: none;
-}
-
-/* Skeleton loader state while auth is pending */
-#auth-nav:empty {
-  position: relative;
-}
-
-#auth-nav:empty::after {
-  content: "•••";
-  opacity: 0.5;
-  font-size: 0.85rem;
-  padding: 6px 14px;
-}
-
-/* ─── AUTH NAV LABELS & BUTTONS ─────────────────────────────────────────────── */
-.auth-user-name {
-  font-size: 0.85rem;
-  opacity: 0.8;
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.auth-guest-label {
-  font-size: 0.75rem;
-  opacity: 0.55;
-  font-style: italic;
-}
-
-.auth-btn {
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
   cursor: pointer;
-  border: none;
-  transition:
-    background 0.15s,
-    opacity 0.15s;
 }
 
-.auth-btn-primary {
-  background: #5b6af0;
-  color: #fff;
+/* ─── DARK MODE OVERRIDES ─────────────────────────────────────────────────────── */
+body.dark header {
+  background: var(--card-bg, #1e1e2e);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
-.auth-btn-primary:hover {
-  background: #4a59d8;
+body.dark .header-row--bottom {
+  border-top-color: rgba(255,255,255,0.07);
 }
-
-.auth-btn-ghost {
-  background: transparent;
-  color: var(--btn-text, #555);
-  border: 1px solid var(--border-color, #ccc);
+body.dark .chat-session-bar {
+  background: rgba(255,255,255,0.06);
 }
-.auth-btn-ghost:hover {
-  background: var(--btn-bg, #f0f0f0);
+body.dark #chat-select {
+  background: #2a2a3d;
+  border-color: #3a3a50;
+  color: #e0e0e0;
 }
+body.dark .activities-menu {
+  background: #2a2a3d;
+  border-color: #3a3a50;
+}
+body.dark .activities-menu button { color: #e0e0e0; }
+body.dark .activities-menu button:not(:last-child) { border-bottom-color: #3a3a50; }
+body.dark .activities-menu button:hover { background: #33334a; }

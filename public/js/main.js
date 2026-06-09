@@ -12,6 +12,7 @@ import {
 } from "./chat.js";
 import { initFlashcards } from "./flashcards.js";
 import { startListeningPractice } from "./listening.js";
+import { startClozeActivity } from "./cloze.js";
 import { langMap } from "./languages.js";
 
 // ─── Auth bootstrap ────────────────────────────────────────────────────────────
@@ -370,10 +371,42 @@ async function initializeChatSessions() {
   await loadChatSession(currentChatId);
 }
 
+// ─── Activities dropdown ───────────────────────────────────────────────────────
+const activitiesBtn = document.getElementById("activities-btn");
+const activitiesMenu = document.getElementById("activities-menu");
+
+if (activitiesBtn && activitiesMenu) {
+  activitiesBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const open = activitiesMenu.classList.toggle("open");
+    activitiesBtn.setAttribute("aria-expanded", open);
+  });
+
+  // Close when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!activitiesBtn.contains(e.target) && !activitiesMenu.contains(e.target)) {
+      activitiesMenu.classList.remove("open");
+      activitiesBtn.setAttribute("aria-expanded", "false");
+    }
+  });
+}
+
 // Initialize listening practice button
 const listenBtn = document.getElementById("listen-practice-btn");
 if (listenBtn) {
-  listenBtn.addEventListener("click", startListeningPractice);
+  listenBtn.addEventListener("click", () => {
+    activitiesMenu?.classList.remove("open");
+    startListeningPractice();
+  });
+}
+
+// Cloze button
+const clozeBtn = document.getElementById("cloze-btn");
+if (clozeBtn) {
+  clozeBtn.addEventListener("click", () => {
+    activitiesMenu?.classList.remove("open");
+    startClozeActivity();
+  });
 }
 
 // Global state
