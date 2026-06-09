@@ -208,3 +208,144 @@ body.dark .auth-submit:disabled {
   transform: none;
   box-shadow: none;
 }
+
+/* ─── CLOZE OVERLAY - DARK MODE ────────────────────────────────────────────── */
+body.dark .cloze-overlay {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+body.dark .cloze-modal {
+  background: #1e1e2e;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+body.dark .cloze-title {
+  color: #e0e0ef;
+}
+
+body.dark .cloze-header h2 {
+  color: #e0e0ef;
+}
+
+body.dark .cloze-close-btn {
+  color: #8888aa;
+}
+
+body.dark .cloze-close-btn:hover {
+  background: #2a2a3e;
+  color: #e0e0ef;
+}
+
+body.dark .cloze-subtitle {
+  color: #7777aa;
+}
+
+body.dark .cloze-item {
+  background: #2a2a3e;
+  border-color: #3a3a5e;
+}
+
+body.dark .cloze-item.correct {
+  border-color: #4caf50;
+  background: rgba(76, 175, 80, 0.1);
+}
+
+body.dark .cloze-item.incorrect {
+  border-color: #f44336;
+  background: rgba(244, 67, 54, 0.1);
+}
+
+body.dark .cloze-sentence {
+  color: #e0e0ef;
+}
+
+body.dark .cloze-blank {
+  background: #2a2a4e;
+  color: #7b89ff;
+}
+
+body.dark .cloze-blank.filled {
+  background: #5b6af0;
+  color: #fff;
+}
+
+body.dark .cloze-options {
+  gap: 8px;
+}
+
+body.dark .cloze-option {
+  border-color: #4a4a6e;
+  background: #252538;
+  color: #c0c0e0;
+}
+
+body.dark .cloze-option:hover {
+  border-color: #7b89ff;
+  color: #7b89ff;
+  background: #2a2a4e;
+}
+
+body.dark .cloze-option.selected {
+  background: #5b6af0;
+  border-color: #5b6af0;
+  color: #fff;
+}
+
+body.dark .cloze-hint {
+  color: #7777aa;
+}
+
+body.dark .cloze-feedback.success {
+  color: #69db7e;
+}
+
+body.dark .cloze-feedback.error {
+  color: #ff6b6b;
+}
+
+body.dark .cloze-feedback.warn {
+  color: #ffb74d;
+}
+
+body.dark .cloze-check-btn {
+  background: #5b6af0;
+  color: #fff;
+}
+
+body.dark .cloze-check-btn:hover {
+  background: #6d7af5;
+}
+
+body.dark .cloze-retry-btn {
+  background: #2a2a3e;
+  color: #c0c0e0;
+  border: 1px solid #3a3a5e;
+}
+
+body.dark .cloze-retry-btn:hover {
+  background: #353548;
+  color: #e0e0ef;
+}
+
+body.dark .cloze-score {
+  background: #2a2a3e;
+}
+
+body.dark .cloze-score.perfect {
+  background: rgba(46, 125, 50, 0.2);
+  color: #69db7e;
+  border: 1px solid #2e7d32;
+}
+
+body.dark .cloze-score.good {
+  background: rgba(245, 127, 23, 0.2);
+  color: #ffb74d;
+  border: 1px solid #f57f17;
+}
+
+body.dark .cloze-score.low {
+  background: rgba(198, 40, 40, 0.2);
+  color: #ff8a8a;
+  border: 1px solid #c62828;
+}

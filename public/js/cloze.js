@@ -23,6 +23,12 @@ function buildPrompt(targetLanguage, difficulty, context) {
 Target language: ${targetLanguage}
 Learner level: ${difficulty}
 
+CRITICAL RULES:
+1. Every sentence, every option, and every hint MUST be entirely in ${targetLanguage}.
+2. Do NOT mix any other languages like English, German, French, or Spanish.
+3. Use ONLY ${targetLanguage} words and grammar.
+4. Output ONLY a valid JSON array - no markdown, no code fences, no extra text.
+
 ${contextSection}
 
 Create a CLOZE exercise: write exactly 4 sentences (or short sentence pairs) in ${targetLanguage}. In each sentence, replace ONE key word or short phrase with a blank written as "___". Then provide exactly 3 multiple-choice options for that blank — one correct answer and two plausible distractors. Mix up which option is correct each time.
@@ -35,7 +41,9 @@ Return ONLY a JSON array with no extra text, like this:
     "answer": "went",
     "hint": "Simple past tense of 'go'"
   }
-]`;
+]
+
+Remember: ALL text including the hint must be in ${targetLanguage}.`;
 }
 
 // ── API call ───────────────────────────────────────────────────────────────────
@@ -61,10 +69,14 @@ async function fetchClozeExercise(targetLanguage, difficulty) {
 
   // Strip markdown code fences if present, then extract the JSON array
   // (handles preamble text like "User Safety: safe" before the array)
-  const fenceStripped = raw.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim();
+  const fenceStripped = raw
+    .replace(/^```[a-z]*\n?/i, "")
+    .replace(/```$/, "")
+    .trim();
   const start = fenceStripped.indexOf("[");
   const end = fenceStripped.lastIndexOf("]");
-  if (start === -1 || end === -1) throw new Error("No JSON array found in response");
+  if (start === -1 || end === -1)
+    throw new Error("No JSON array found in response");
   const clean = fenceStripped.slice(start, end + 1);
   return JSON.parse(clean);
 }
@@ -86,7 +98,7 @@ function renderClozeOverlay(items, targetLanguage, difficulty) {
   overlay.innerHTML = `
     <div class="cloze-modal">
       <div class="cloze-header">
-        <h2>📝 Cloze Story Gaps</h2>
+        <h2 class="cloze-title">📝 Cloze Story Gaps</h2>
         <button class="cloze-close-btn" title="Close">✕</button>
       </div>
       <p class="cloze-subtitle">${targetLanguage} · ${difficulty} — Fill in the missing word or phrase.</p>
@@ -109,7 +121,7 @@ function renderClozeOverlay(items, targetLanguage, difficulty) {
     // Render sentence with blank highlighted
     const sentenceHtml = item.sentence.replace(
       "___",
-      `<span class="cloze-blank" data-idx="${idx}">___</span>`
+      `<span class="cloze-blank" data-idx="${idx}">___</span>`,
     );
 
     div.innerHTML = `
@@ -118,7 +130,7 @@ function renderClozeOverlay(items, targetLanguage, difficulty) {
         ${item.options
           .map(
             (opt) =>
-              `<button class="cloze-option" data-value="${opt}">${opt}</button>`
+              `<button class="cloze-option" data-value="${opt}">${opt}</button>`,
           )
           .join("")}
       </div>
@@ -128,7 +140,9 @@ function renderClozeOverlay(items, targetLanguage, difficulty) {
     // Option click — select
     div.querySelectorAll(".cloze-option").forEach((btn) => {
       btn.addEventListener("click", () => {
-        div.querySelectorAll(".cloze-option").forEach((b) => b.classList.remove("selected"));
+        div
+          .querySelectorAll(".cloze-option")
+          .forEach((b) => b.classList.remove("selected"));
         btn.classList.add("selected");
         // Update the inline blank
         const blankSpan = div.querySelector(`.cloze-blank[data-idx="${idx}"]`);
@@ -182,8 +196,8 @@ function renderClozeOverlay(items, targetLanguage, difficulty) {
       correct === items.length
         ? "cloze-score perfect"
         : correct >= items.length / 2
-        ? "cloze-score good"
-        : "cloze-score low";
+          ? "cloze-score good"
+          : "cloze-score low";
   });
 
   // Retry
@@ -192,7 +206,9 @@ function renderClozeOverlay(items, targetLanguage, difficulty) {
     startClozeActivity();
   });
 
-  overlay.querySelector(".cloze-close-btn").addEventListener("click", closeOverlay);
+  overlay
+    .querySelector(".cloze-close-btn")
+    .addEventListener("click", closeOverlay);
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) closeOverlay();
   });
@@ -214,13 +230,14 @@ export async function startClozeActivity() {
 
   try {
     const items = await fetchClozeExercise(targetLanguage, difficulty);
-    if (!Array.isArray(items) || !items.length) throw new Error("Empty response");
+    if (!Array.isArray(items) || !items.length)
+      throw new Error("Empty response");
     renderClozeOverlay(items, targetLanguage, difficulty);
   } catch (err) {
     console.error("Cloze error:", err);
     addMessage(
       "⚠️ Could not generate cloze exercise. Please try again.",
-      "system-error"
+      "system-error",
     );
   }
 }

@@ -2,10 +2,33 @@ const client = require("../services/openrouter");
 const AppError = require("../utils/AppError");
 
 module.exports = {
-  async ask(req, res) {
+  async ask(req, res, next) {
     try {
-      const { prompt, targetLanguage, difficulty } = req.body;
+      const { prompt, targetLanguage, difficulty, mode } = req.body;
 
+      // Special handling for cloze mode - bypass the tutor wrapper entirely
+      if (mode === "cloze") {
+        const completion = await client.chat.completions.create({
+          model: "openrouter/free",
+          messages: [
+            { 
+              role: "system", 
+              content: `You are a JSON generator. Output ONLY a valid JSON array, no prose, no markdown, no explanations.
+All sentences, options, and hints must be entirely in ${targetLanguage}. 
+Zero mixing of other languages like English, German, French, or Spanish - every word must be ${targetLanguage}.
+Each sentence must be grammatically correct ${targetLanguage}.
+Keep vocabulary appropriate for ${difficulty} level.` 
+            },
+            { role: "user", content: prompt },
+          ],
+          temperature: 0.3, // Lower temperature for more consistent JSON output
+        });
+
+        const reply = completion.choices[0].message.content;
+        return res.json({ reply });
+      }
+
+      // Normal tutor mode for conversation, grammar, vocabulary, roleplay
       const fullPrompt = `
         System: You are a multilingual language-learning tutor.
         The user may type in ANY language.

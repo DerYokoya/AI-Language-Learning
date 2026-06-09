@@ -184,11 +184,3 @@
 .cloze-score.perfect  { background: #e8f5e9; color: #2e7d32; }
 .cloze-score.good     { background: #fff8e1; color: #f57f17; }
 .cloze-score.low      { background: #ffebee; color: #c62828; }
-
-/* Dark mode */
-body.dark .cloze-modal         { background: #1e1e2e; }
-body.dark .cloze-item          { background: #2a2a3d; }
-body.dark .cloze-option        { background: #2a2a3d; border-color: #444; color: #ddd; }
-body.dark .cloze-option:hover  { border-color: #7b8af8; color: #7b8af8; }
-body.dark .cloze-retry-btn     { background: #2a2a3d; color: #ddd; }
-body.dark .cloze-retry-btn:hover { background: #33334a; }
