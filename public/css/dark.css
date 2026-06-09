@@ -132,3 +132,79 @@ body.dark .auth-btn-ghost {
 body.dark .auth-btn-ghost:hover {
   background: #2a2a3e;
 }
+
+body.dark .auth-modal button {
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+/* Submit button (Login/Signup) */
+body.dark .auth-submit {
+  background: linear-gradient(135deg, #5b6af0 0%, #4a5ae0 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+body.dark .auth-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #6d7af5 0%, #5b6af0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(91, 106, 240, 0.3);
+}
+
+body.dark .auth-submit:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Guest button (distinct secondary style) */
+body.dark .auth-guest-btn {
+  background: transparent;
+  color: #9b9bc5;
+  border: 1.5px solid #3a3a5e;
+  border-radius: 8px;
+  padding: 10px 16px;
+}
+
+body.dark .auth-guest-btn:hover {
+  background: rgba(91, 106, 240, 0.1);
+  border-color: #5b6af0;
+  color: #b0b0e0;
+}
+
+/* Close button */
+body.dark .auth-modal-close {
+  color: #8888aa;
+}
+
+body.dark .auth-modal-close:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+/* Tab buttons */
+body.dark .auth-tab {
+  color: #8888aa;
+}
+
+body.dark .auth-tab.active {
+  color: #7b89ff;
+  border-bottom-color: #7b89ff;
+}
+
+body.dark .auth-tab:hover:not(.active) {
+  color: #aaaadd;
+}
+
+/* Disabled state */
+body.dark .auth-submit:disabled {
+  background: #3a3a5e;
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
