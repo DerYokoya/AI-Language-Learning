@@ -95,23 +95,17 @@ async function generateFlashcards() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       prompt: `Generate exactly 6 flashcards to help me practice ${targetLanguage} at ${difficulty} level.
-      Use vocabulary or phrases from our recent conversation if available, otherwise choose useful common words.
-      Format EXACTLY like this (no extra text before or after):
+Use vocabulary or phrases from our recent conversation if available, otherwise choose useful common words.
+Output ONLY a raw JSON array — no markdown, no code fences, no extra text.
+Each item must have exactly two keys:
+  "front": a word or phrase in ${targetLanguage}
+  "back": the English translation, then two newlines, then a short usage example in ${targetLanguage}
 
-      CARD:
-      Front: [word or phrase in ${targetLanguage}]
-      Back: [English translation]\n\n[Short usage example in ${targetLanguage}]
-
-      IMPORTANT: Put TWO line breaks between the translation and the example.
-
-      CARD:
-      Front: ...
-      Back: ...
-
-      Conversation so far:
-      ${historyText || "(no conversation yet)"}`,
+Conversation so far:
+${historyText || "(no conversation yet)"}`,
       targetLanguage,
       difficulty,
+      mode: "flashcard",
     }),
   });
 
@@ -120,7 +114,20 @@ async function generateFlashcards() {
   if (typingElem) typingElem.remove();
 
   const data = await response.json();
-  const newCards = parseFlashcards(data.reply);
+
+  // Try JSON parsing first (more reliable), fall back to legacy CARD: parser
+  let newCards;
+  try {
+    const raw = (data.reply || "").trim()
+      .replace(/^```[a-z]*(?:\r?\n)?/i, "").replace(/```$/, "").trim();
+    const start = raw.indexOf("[");
+    const end = raw.lastIndexOf("]");
+    if (start === -1 || end === -1) throw new Error("no array");
+    newCards = JSON.parse(raw.slice(start, end + 1))
+      .filter((c) => c.front && c.back);
+  } catch {
+    newCards = parseFlashcards(data.reply);
+  }
   const { all: allCards, added } = await mergeNewCards(newCards, targetLanguage, difficulty);
 
   const langCards = allCards

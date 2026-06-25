@@ -13,11 +13,13 @@ module.exports = {
           messages: [
             { 
               role: "system", 
-              content: `You are a JSON generator. Output ONLY a valid JSON array, no prose, no markdown, no explanations.
-All sentences, options, and hints must be entirely in ${targetLanguage}. 
-Zero mixing of other languages like English, German, French, or Spanish - every word must be ${targetLanguage}.
-Each sentence must be grammatically correct ${targetLanguage}.
-Keep vocabulary appropriate for ${difficulty} level.` 
+              content: `You are a strict JSON generator for language-learning exercises. Follow these rules exactly:
+1. Output ONLY a raw JSON array — no markdown, no code fences, no preamble, no explanation.
+2. Every sentence, option, hint, and answer MUST be entirely in ${targetLanguage}. No English or other languages.
+3. Each item MUST have: "sentence" (with exactly one "___"), "options" (array of exactly 3 strings), "answer" (string that exactly matches one of the options), "hint" (in ${targetLanguage}).
+4. The "answer" value MUST be one of the 3 strings in "options" — identical spelling and case.
+5. Sentences must be grammatically correct ${targetLanguage} at ${difficulty} level.
+6. Return exactly 4 items in the array.` 
             },
             { role: "user", content: prompt },
           ],
@@ -28,7 +30,42 @@ Keep vocabulary appropriate for ${difficulty} level.`
         return res.json({ reply });
       }
 
-      // Normal tutor mode for conversation, grammar, vocabulary, roleplay
+      // Flashcard mode — also needs clean JSON output, not tutor prose
+      if (mode === "flashcard") {
+        const completion = await client.chat.completions.create({
+          model: "openrouter/free",
+          messages: [
+            {
+              role: "system",
+              content: `You are a strict JSON generator for language-learning flashcards. Follow these rules exactly:
+1. Output ONLY a raw JSON array — no markdown, no code fences, no preamble, no explanation.
+2. Each item must have exactly two keys: "front" (word or phrase in ${targetLanguage}) and "back" (English translation, two newlines, then a short usage example in ${targetLanguage}).
+3. Return exactly 6 items.`,
+            },
+            { role: "user", content: prompt },
+          ],
+          temperature: 0.3,
+        });
+        const reply = completion.choices[0].message.content;
+        return res.json({ reply });
+      }
+
+      // Listening mode — must return ONLY the sentence, no extra text
+      if (mode === "listening") {
+        const completion = await client.chat.completions.create({
+          model: "openrouter/free",
+          messages: [
+            {
+              role: "system",
+              content: `You generate single sentences in ${targetLanguage} for listening practice. Output ONLY the sentence — no quotes, no labels, no explanations, no punctuation beyond what the sentence itself needs. The sentence must be natural, grammatically correct ${targetLanguage} at ${difficulty} level.`,
+            },
+            { role: "user", content: prompt },
+          ],
+          temperature: 0.5,
+        });
+        const reply = completion.choices[0].message.content;
+        return res.json({ reply });
+      }
       const fullPrompt = `
         System: You are a multilingual language-learning tutor.
         The user may type in ANY language.

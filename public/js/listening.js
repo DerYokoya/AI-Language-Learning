@@ -50,6 +50,7 @@ async function startListeningPractice() {
         prompt: `Generate a short, natural sentence in ${targetLanguage} for listening practice at ${difficulty} level. The sentence should be appropriate for the student to listen to and repeat. Return ONLY the sentence, nothing else. No explanations, no quotes around it.`,
         targetLanguage,
         difficulty,
+        mode: "listening",
       }),
     });
 

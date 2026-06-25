@@ -59,7 +59,7 @@ async function fetchClozeExercise(targetLanguage, difficulty) {
       prompt,
       targetLanguage,
       difficulty,
-      mode: "vocabulary",
+      mode: "cloze",
     }),
   });
 
@@ -78,7 +78,26 @@ async function fetchClozeExercise(targetLanguage, difficulty) {
   if (start === -1 || end === -1)
     throw new Error("No JSON array found in response");
   const clean = fenceStripped.slice(start, end + 1);
-  return JSON.parse(clean);
+  const items = JSON.parse(clean);
+
+  // Validate each item: answer must be present in options (case-insensitive match)
+  return items
+    .filter((item) => {
+      if (!item.sentence || !Array.isArray(item.options) || !item.answer) return false;
+      if (!item.sentence.includes("___")) return false;
+      const answerLower = item.answer.trim().toLowerCase();
+      const matchedOption = item.options.find(
+        (opt) => opt.trim().toLowerCase() === answerLower
+      );
+      if (!matchedOption) {
+        console.warn("Cloze item dropped — answer not in options:", item);
+        return false;
+      }
+      // Normalise answer to exact casing from options array
+      item.answer = matchedOption;
+      return true;
+    })
+    .slice(0, 4);
 }
 
 // ── Overlay UI ────────────────────────────────────────────────────────────────
