@@ -63,6 +63,7 @@ async function fetchClozeExercise(targetLanguage, difficulty) {
     }),
   });
 
+  if (response.status === 429) throw new Error("rate_limited");
   if (!response.ok) throw new Error(`API error: ${response.status}`);
   const data = await response.json();
   const raw = (data.reply || "").trim();
@@ -254,9 +255,10 @@ export async function startClozeActivity() {
     renderClozeOverlay(items, targetLanguage, difficulty);
   } catch (err) {
     console.error("Cloze error:", err);
-    addMessage(
-      "⚠️ Could not generate cloze exercise. Please try again.",
-      "system-error",
-    );
+    if (err.message === "rate_limited") {
+      addMessage("⏱️ Too many requests! Please wait a moment before trying again.", "system-error");
+    } else {
+      addMessage("⚠️ Could not generate cloze exercise. Please try again.", "system-error");
+    }
   }
 }

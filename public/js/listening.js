@@ -57,6 +57,11 @@ async function startListeningPractice() {
     const typingElem = document.getElementById("typing-indicator");
     if (typingElem) typingElem.remove();
 
+    if (response.status === 429) {
+      addMessage("⏱️ Too many requests! Please wait a moment before trying again.", "system-error");
+      return;
+    }
+
     const data = await response.json();
     const sentence = data.reply.trim();
 
@@ -144,6 +149,11 @@ export async function evaluateListeningAttempt(
 
     const typingElem = document.getElementById("typing-indicator");
     if (typingElem) typingElem.remove();
+
+    if (response.status === 429) {
+      addMessage("⏱️ Too many requests! Please wait a moment before trying again.", "system-error");
+      return;
+    }
 
     const data = await response.json();
     addMessage(data.reply, "ai");

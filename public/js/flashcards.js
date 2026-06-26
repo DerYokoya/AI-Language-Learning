@@ -113,6 +113,11 @@ ${historyText || "(no conversation yet)"}`,
   const typingElem = document.getElementById("typing-indicator");
   if (typingElem) typingElem.remove();
 
+  if (response.status === 429) {
+    addMessage("⏱️ Too many requests! Please wait a moment before generating flashcards.", "system-error");
+    return;
+  }
+
   const data = await response.json();
 
   // Try JSON parsing first (more reliable), fall back to legacy CARD: parser

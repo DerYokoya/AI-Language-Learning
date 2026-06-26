@@ -319,6 +319,11 @@ export async function sendMessage() {
 
     hideTyping();
 
+    if (response.status === 429) {
+      addMessage("⏱️ Too many messages! Please wait a moment before sending another.", "system-error");
+      return;
+    }
+
     if (!response.ok) {
       addMessage("⚠️ Server error. Please try again.", "ai");
       return;

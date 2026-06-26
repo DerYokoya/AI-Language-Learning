@@ -98,6 +98,9 @@ module.exports = {
       const reply = completion.choices[0].message.content;
       res.json({ reply });
     } catch (err) {
+      if (err.status === 429) {
+        return next(new AppError("Rate limit reached. Please wait a moment before trying again.", 429));
+      }
       console.error("AI request failed:", err);
       next(new AppError("AI request failed", 503));
     }
