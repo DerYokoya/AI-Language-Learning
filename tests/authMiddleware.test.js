@@ -21,23 +21,24 @@ describe("requireAuth middleware", () => {
     requireAuth(req, res, next);
 
     expect(next).toHaveBeenCalledTimes(1);
+    expect(next).toHaveBeenCalledWith(); // called with no args = success
     expect(req.userId).toBe(123);
-    expect(res.status).not.toHaveBeenCalled();
   });
 
-  it("returns 401 when no token cookie is present", () => {
+  it("calls next(err) with 401 when no token cookie is present", () => {
     const req = { cookies: {} };
     const res = mockRes();
     const next = jest.fn();
 
     requireAuth(req, res, next);
 
-    expect(next).not.toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: "Not authenticated" });
+    expect(next).toHaveBeenCalledTimes(1);
+    const err = next.mock.calls[0][0];
+    expect(err.statusCode).toBe(401);
+    expect(err.message).toBe("Not authenticated");
   });
 
-  it("returns 401 with code TOKEN_EXPIRED for an expired token", () => {
+  it("calls next(err) with 401 TOKEN_EXPIRED for an expired token", () => {
     const expiredToken = jsonwebtoken.sign(
       { id: 5 },
       process.env.JWT_SECRET,
@@ -49,23 +50,22 @@ describe("requireAuth middleware", () => {
 
     requireAuth(req, res, next);
 
-    expect(next).not.toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({
-      error: "Token expired",
-      code: "TOKEN_EXPIRED",
-    });
+    expect(next).toHaveBeenCalledTimes(1);
+    const err = next.mock.calls[0][0];
+    expect(err.statusCode).toBe(401);
+    expect(err.message).toBe("Token expired");
   });
 
-  it("returns 401 for a malformed/tampered token", () => {
+  it("calls next(err) with 401 for a malformed/tampered token", () => {
     const req = { cookies: { token: "not.a.valid.jwt" } };
     const res = mockRes();
     const next = jest.fn();
 
     requireAuth(req, res, next);
 
-    expect(next).not.toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: "Invalid token" });
+    expect(next).toHaveBeenCalledTimes(1);
+    const err = next.mock.calls[0][0];
+    expect(err.statusCode).toBe(401);
+    expect(err.message).toBe("Invalid token");
   });
 });
