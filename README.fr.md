@@ -59,6 +59,9 @@ L'IA prononce une phrase dans la langue cible, vous la répétez à l'aide de vo
 ### Fiches de vocabulaire générées par l'IA
 Générez automatiquement un jeu de fiches de vocabulaire à partir de votre historique de conversations. Étudiez dans une interface dédiée aux fiches, marquez les cartes comme connues ou inconnues et suivez vos progrès au fil du temps.
 
+### Exercices de complétion
+Exercices de complétion générés par l'IA. Chaque question présente une phrase dans laquelle il manque un mot, ainsi que trois propositions au choix, avec un indice disponible dans la langue cible.
+
 ### Outils vocaux intégrés
 - **Reconnaissance vocale** — Exprimez vos réponses à l'oral plutôt qu'à l'écrit.
 - **Synthèse vocale** — Activez la lecture automatique pour que les réponses de l'IA soient lues à voix haute. Relancez ou arrêtez la lecture à tout moment.
@@ -81,6 +84,11 @@ Une fois connecté, toutes les sessions de chat, les messages, les fiches et les
 - Niveaux de difficulté : débutant, intermédiaire, avancé.
 - Basculer entre les thèmes clair et sombre.
 
+### Limitation du débit
+L'API est protégée contre les abus grâce à une limitation du débit par route via `express-rate-limit` :
+- **`/api/ai/ask`** — les visiteurs sont limités à 10 requêtes par minute (en fonction de l'adresse IP) ; les utilisateurs authentifiés ont droit à 30 requêtes par minute (en fonction de l'identifiant utilisateur). Tout dépassement de cette limite entraîne le renvoi d’une réponse `429` accompagnée d’un message convivial dans l’interface utilisateur.
+- **`/api/auth`** — tous les points de terminaison d’authentification (connexion, inscription, actualisation) sont limités à 20 requêtes toutes les 15 minutes par adresse IP, ce qui permet de se prémunir contre les attaques par force brute.
+
 ---
 
 ## Architecture du système
@@ -91,6 +99,8 @@ Le système est conçu comme une architecture full-stack en couches séparant l'
 Frontend (Vanilla JS)
         ↓
 API REST (Express)
+        ↓
+Middleware de limitation de débit
         ↓
 Couche de contrôleurs
         ↓
@@ -105,6 +115,7 @@ L'application repose sur un patron de gestion centralisée des erreurs :
 
 - **`AppError`** (`src/utils/AppError.js`) — une classe d'erreur personnalisée qui encapsule un message et un code de statut HTTP, utilisée dans l'ensemble des contrôleurs pour lever des erreurs cohérentes et typées.
 - **`errorHandler`** (`src/middleware/errorHandler.js`) — un middleware de gestion d'erreurs Express enregistré en fin de chaîne. Il intercepte toutes les instances `AppError` levées (ainsi que les erreurs inattendues) et retourne une réponse JSON uniforme, maintenant la logique d'erreur hors des contrôleurs individuels.
+- **Transmission de la limite de débit d'OpenRouter** — lorsqu'OpenRouter renvoie un code `429` (limite par minute du modèle gratuit), le contrôleur IA l'intercepte et transmet un `429` au client accompagné d'un message clair, au lieu de le masquer sous la forme d'une erreur serveur générique.
 
 ---
 
@@ -119,6 +130,7 @@ L'application repose sur un patron de gestion centralisée des erreurs :
 | **Base de données** | PostgreSQL (`pg`) |
 | **Stockage** | Système hybride cloud + local |
 | **Auth** | JWT (`jsonwebtoken`) (rotation des jetons) + bcrypt |
+| **Limitation du débit** | `express-rate-limit` |
 | **Outils de développement** | Nodemon, dotenv |
 | **Tests** | Jest |
 
@@ -157,7 +169,7 @@ Toutes les routes API sont préfixées par `/api`.
 ### IA — `/api/ai`
 | Méthode | Point de terminaison | Description |
 |---|---|---|
-| `POST` | `/ask` | Envoyer une requête ; renvoie une réponse du tuteur IA |
+| `POST` | `/ask` | Envoie une question ; renvoie une réponse du tuteur IA. Limite de requêtes : 10 requêtes/min (utilisateurs non authentifiés), 30 requêtes/min (utilisateurs authentifiés). |
 
 ### Stockage — `/api/storage` *(authentification requise)*
 | Méthode | Point de terminaison | Description |
@@ -196,6 +208,7 @@ ai-language-learning/
 │   │   ├── auth.css          # Styles de la fenêtre modale d'authentification
 │   │   ├── chat.css          # Styles de la fenêtre de chat et des messages
 │   │   ├── input.css         # Styles des zones de saisie et des boutons
+│   │   ├── cloze.css         # Styles de superposition pour les exercices de Cloze
 │   │   └── header.css        # Styles de l'en-tête, de la navigation et du sélecteur de mode
 │   └── js/
 │       ├── main.js           # Point d'entrée de l'application et logique de l'interface utilisateur
@@ -204,6 +217,7 @@ ai-language-learning/
 │       ├── flashcards.js     # Interface des fiches de vocabulaire
 │       ├── languages.js      # Définitions partagées des langues
 │       ├── listening.js      # Module d'entraînement à l'écoute
+│       ├── cloze.js          # Module d'exercices de type « Cloze » (à trous)
 │       ├── appStorage.js     # Synchronisation du stockage cloud
 │       └── storage.js        # Aides au stockage local
 ├── src/
@@ -265,6 +279,7 @@ ai-language-learning/
 - Conception d'une rotation sécurisée des jetons avec révocation des jetons d'actualisation
 - Gestion d'un système de stockage double (localStorage vs PostgreSQL)
 - Structuration de contrôleurs backend modulaires pour l'évolutivité
+- Mise en place d'une limitation de débit à plusieurs niveaux qui protège le point de terminaison IA sans nuire à l'expérience utilisateur
 
 ## Pour commencer
 
