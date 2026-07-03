@@ -11,6 +11,7 @@ Une plateforme d'apprentissage des langues par l'IA « full-stack » qui offre u
 ## Voir en ligne
 
 [![Démonstration en direct](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge)](https://ai-language-learning.onrender.com/)
+[![CI](https://github.com/DerYokoya/AI-Language-Learning/actions/workflows/ci.yml/badge.svg)](https://github.com/DerYokoya/AI-Language-Learning/actions/workflows/ci.yml)
 
 ---
 
@@ -56,8 +57,8 @@ Passez instantanément d'un style d'entraînement ciblé à un autre :
 ### Exercices d'écoute interactifs
 L'IA prononce une phrase dans la langue cible, vous la répétez à l'aide de votre microphone et vous obtenez un retour instantané avec un score de précision pour affiner à la fois votre compréhension et votre prononciation.
 
-### Fiches de vocabulaire générées par l'IA
-Générez automatiquement un jeu de fiches de vocabulaire à partir de votre historique de conversations. Étudiez dans une interface dédiée aux fiches, marquez les cartes comme connues ou inconnues et suivez vos progrès au fil du temps.
+### Fiches de vocabulaire générées par l'IA avec répétition espacée
+Générez automatiquement un jeu de fiches de vocabulaire à partir de votre historique de conversations. Chaque fiche est programmée grâce à l'**algorithme SM-2** (la même méthode de répétition espacée qu'utilise Anki). Les révisions sont notées Encore / Difficile / Bien / Facile, et la prochaine date de révision s'allonge ou se raccourcit selon votre niveau de maîtrise de la fiche. Une vue « Réviser les fiches à revoir » affiche exactement ce qui est dû en ce moment, avec un badge en direct indiquant le nombre de fiches à revoir.
 
 ### Exercices de complétion
 Exercices de complétion générés par l'IA. Chaque question présente une phrase dans laquelle il manque un mot, ainsi que trois propositions au choix, avec un indice disponible dans la langue cible.
@@ -133,6 +134,7 @@ L'application repose sur un patron de gestion centralisée des erreurs :
 | **Limitation du débit** | `express-rate-limit` |
 | **Outils de développement** | Nodemon, dotenv |
 | **Tests** | Jest |
+| **CI/CD** | GitHub Actions (tests multi-versions, validation du schéma, audit des dépendances) |
 
 ---
 ## Référence API
@@ -151,8 +153,8 @@ Toutes les routes API sont préfixées par `/api`.
 ### Utilisateurs — `/api/users` *(authentification requise)*
 | Méthode | Point de terminaison | Description |
 |---|---|---|
-| `GET` | `/me` | Renvoie l'adresse e-mail de l'utilisateur actuel (à ne pas confondre avec `/api/auth/me`, qui renvoie les informations d'authentification et de session) |
-| `PUT` | `/settings` | Met à jour ou ajoute le thème, la langue, le niveau de difficulté et les préférences de lecture automatique de l'utilisateur |
+| `GET` | `/me` | Renvoyer l'e-mail de l'utilisateur actuel (à distinguer de `/api/auth/me`, qui renvoie les informations d'authentification/session) |
+| `PUT` | `/settings` | Créer ou mettre à jour le thème, la langue, le niveau de difficulté et les préférences de lecture automatique de l'utilisateur |
 
 ### Chats — `/api/chats` *(authentification requise)*
 | Méthode | Point de terminaison | Description |
@@ -167,8 +169,8 @@ Toutes les routes API sont préfixées par `/api`.
 ### Fiches — `/api/flashcards` *(authentification requise)*
 | Méthode | Point de terminaison | Description |
 |---|---|---|
-| `GET` | `/` | Afficher la liste de toutes les fiches |
-| `POST` | `/bulk` | Ajouter une ou plusieurs fiches à la fois (accepte un tableau) |
+| `GET` | `/` | Lister toutes les fiches |
+| `POST` | `/bulk` | Ajouter une ou plusieurs fiches en une seule fois (accepte un tableau) |
 | `PATCH` | `/:id` | Marquer une fiche comme connue/inconnue (incrémente le nombre de révisions) |
 | `DELETE` | `/` | Supprimer **toutes** les fiches de l'utilisateur actuel |
 
@@ -180,7 +182,7 @@ Toutes les routes API sont préfixées par `/api`.
 ### Stockage — `/api/storage` *(authentification requise)*
 | Méthode | Point de terminaison | Description |
 |---|---|---|
-| `GET` / `POST` | `/bulk` | Récupération simultanée de plusieurs valeurs stockées (utilisation de `POST` pour transmettre les clés dans le corps de la requête) |
+| `GET` / `POST` | `/bulk` | Récupérer plusieurs valeurs stockées en une seule fois (`POST` sert à transmettre les clés dans le corps de la requête) |
 | `GET` | `/:key` | Récupérer une valeur stockée par clé |
 | `PUT` | `/:key` | Définir / mettre à jour une valeur stockée |
 | `DELETE` | `/:key` | Supprimer une clé stockée |
@@ -205,6 +207,9 @@ Toutes les routes API sont préfixées par `/api`.
 
 ```
 ai-language-learning/
+├── .github/
+│   └── workflows/
+│       └── ci.yml            # GitHub Actions : matrice de tests, validation du schéma, audit
 ├── public/                   # Interface statique
 │   ├── index.html
 │   ├── logo.svg / logo.ico
@@ -221,7 +226,8 @@ ai-language-learning/
 │       ├── main.js           # Point d'entrée de l'application et logique de l'interface utilisateur
 │       ├── auth.js           # Flux d'authentification
 │       ├── chat.js           # Gestion des sessions de chat
-│       ├── flashcards.js     # Interface des fiches de vocabulaire
+│       ├── flashcards.js     # Interface des fiches + mode de révision des fiches à revoir
+│       ├── spacedRepetition.js # Algorithme de planification par répétition espacée (SM-2)
 │       ├── languages.js      # Définitions partagées des langues
 │       ├── listening.js      # Module d'entraînement à l'écoute
 │       ├── cloze.js          # Module d'exercices de type « Cloze » (à trous)
@@ -266,7 +272,8 @@ ai-language-learning/
 ├── jest.config.js            # Configuration Jest
 ├── server.js                 # Point d'entrée de l'application Express
 ├── package.json
-└── .env                      # Variables d'environnement (non validées)
+├── .env.example               # Modèle de variables d'environnement
+└── .env                       # Variables d'environnement (non validées)
 ```
 
 ---
@@ -326,7 +333,7 @@ ai-language-learning/
    |---|---|---|
    | `PORT` | Non (valeur par défaut : `3000`) | Port sur lequel le serveur Express est à l'écoute |
    | `DATABASE_URL` | Oui | Chaîne de connexion PostgreSQL |
-   | `OPENROUTER_API_KEY` | Oui | Clé API provenant d'[OpenRouter](https://openrouter.ai/keys) |
+   | `OPENROUTER_API_KEY` | Oui | Clé API fournie par [OpenRouter](https://openrouter.ai/keys) |
    | `JWT_SECRET` | Oui | Chaîne aléatoire longue utilisée pour signer les jetons d'accès |
    | `JWT_REFRESH_SECRET` | Non (valeur par défaut : `JWT_SECRET + « _refresh »`) | Secret distinct pour la signature des jetons de rafraîchissement |
 
@@ -376,6 +383,18 @@ npm run test:coverage # avec rapport de couverture
 
 ---
 
+## Intégration continue
+
+Chaque push et chaque pull request vers la branche `main` passe par [GitHub Actions](.github/workflows/ci.yml) :
+
+| Tâche | Description |
+|---|---|
+| **Test** | Exécute la suite de tests Jest avec couverture sur une matrice Node **18 / 20 / 22** |
+| **Vérification de la bonne application du schéma Postgres** | Lance un véritable conteneur de service `postgres:16` et y applique le fichier `src/db/schema.sql`, détectant ainsi les régressions du schéma avant qu’elles n’atteignent l’environnement de production |
+| **Audit des dépendances** | Exécute `npm audit --audit-level=high` pour signaler les vulnérabilités élevées/critiques |
+
+Les rapports de couverture sont téléchargés en tant qu’artefact de build à chaque exécution. Les échecs de CI ne bloquent pas automatiquement le déploiement pour le moment. Les fusions vers la branche `main` nécessitent toujours de passer les vérifications si la protection des branches est activée sur le dépôt.
+
 ## Contribuer
 
 Les pull requests sont les bienvenues. Pour les modifications importantes, veuillez d'abord ouvrir un ticket afin de discuter des changements que vous souhaitez apporter.
@@ -384,4 +403,4 @@ Les pull requests sont les bienvenues. Pour les modifications importantes, veuil
 
 ## Licence
 
-[MIT](./LICENSE) — pour plus de détails, consultez le fichier [LICENSE](./LICENSE).
+Ce projet est open source. Consultez le dépôt pour plus de détails sur la licence.
