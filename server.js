@@ -14,6 +14,11 @@ const jwt = require("./src/utils/jwt");
 
 const app = express();
 
+// Render (and most PaaS hosts) sit behind a reverse proxy, so requests
+// arrive with X-Forwarded-For set. Trust exactly 1 hop so Express/
+// express-rate-limit read the real client IP instead of rejecting it.
+app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(cookieParser());
 
