@@ -149,6 +149,12 @@ All API routes are prefixed with `/api`.
 | `POST` | `/refresh` | Rotate refresh token, issue new access token |
 | `GET` | `/me` | Return current authenticated user |
 
+### Users — `/api/users` *(requires auth)*
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/me` | Return the current user's email (distinct from `/api/auth/me`, which returns auth/session info) |
+| `PUT` | `/settings` | Upsert the user's theme, language, difficulty, and auto-read preferences |
+
 ### Chats — `/api/chats` *(requires auth)*
 | Method | Endpoint | Description |
 |---|---|---|
@@ -163,9 +169,9 @@ All API routes are prefixed with `/api`.
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/` | List all flashcards |
-| `POST` | `/` | Add a new flashcard |
-| `PUT` | `/:id` | Update a flashcard (e.g., mark known) |
-| `DELETE` | `/:id` | Delete a flashcard |
+| `POST` | `/bulk` | Add one or more flashcards at once (accepts an array) |
+| `PATCH` | `/:id` | Mark a flashcard known/unknown (increments review count) |
+| `DELETE` | `/` | Delete **all** flashcards for the current user |
 
 ### AI — `/api/ai`
 | Method | Endpoint | Description |
@@ -175,6 +181,7 @@ All API routes are prefixed with `/api`.
 ### Storage — `/api/storage` *(requires auth)*
 | Method | Endpoint | Description |
 |---|---|---|
+| `GET` / `POST` | `/bulk` | Retrieve multiple stored values at once (`POST` used to pass keys in the request body) |
 | `GET` | `/:key` | Retrieve a stored value by key |
 | `PUT` | `/:key` | Set / upsert a stored value |
 | `DELETE` | `/:key` | Delete a stored key |
@@ -311,16 +318,18 @@ ai-language-learning/
 
 4. **Configure environment variables**
 
-   Create a `.env` file in the project root:
-   ```env
-   OPENROUTER_API_KEY="your_openrouter_api_key_here"
-
-   # PostgreSQL connection string
-   DATABASE_URL="postgresql://user:password@localhost:5432/your_database"
-
-   # JWT secret (use long, random strings)
-   JWT_SECRET="your_jwt_secret_here"
+   Copy the example file and fill in your own values:
+   ```sh
+   cp .env.example .env
    ```
+
+   | Variable | Required | Description |
+   |---|---|---|
+   | `PORT` | No (defaults to `3000`) | Port the Express server listens on |
+   | `DATABASE_URL` | Yes | PostgreSQL connection string |
+   | `OPENROUTER_API_KEY` | Yes | API key from [OpenRouter](https://openrouter.ai/keys) |
+   | `JWT_SECRET` | Yes | Long, random string used to sign access tokens |
+   | `JWT_REFRESH_SECRET` | No (falls back to `JWT_SECRET + "_refresh"`) | Separate secret for signing refresh tokens |
 
 5. **Run the application**
 
@@ -376,4 +385,4 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## License
 
-This project is open source. See the repository for license details.
+[MIT](./LICENSE) — see the [LICENSE](./LICENSE) file for details.

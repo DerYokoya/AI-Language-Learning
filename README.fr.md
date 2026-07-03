@@ -148,6 +148,12 @@ Toutes les routes API sont préfixées par `/api`.
 | `POST` | `/refresh` | Renouveler le jeton de rafraîchissement, émettre un nouveau jeton d'accès |
 | `GET` | `/me` | Renvoyer l'utilisateur actuellement authentifié |
 
+### Utilisateurs — `/api/users` *(authentification requise)*
+| Méthode | Point de terminaison | Description |
+|---|---|---|
+| `GET` | `/me` | Renvoie l'adresse e-mail de l'utilisateur actuel (à ne pas confondre avec `/api/auth/me`, qui renvoie les informations d'authentification et de session) |
+| `PUT` | `/settings` | Met à jour ou ajoute le thème, la langue, le niveau de difficulté et les préférences de lecture automatique de l'utilisateur |
+
 ### Chats — `/api/chats` *(authentification requise)*
 | Méthode | Point de terminaison | Description |
 |---|---|---|
@@ -161,10 +167,10 @@ Toutes les routes API sont préfixées par `/api`.
 ### Fiches — `/api/flashcards` *(authentification requise)*
 | Méthode | Point de terminaison | Description |
 |---|---|---|
-| `GET` | `/` | Lister toutes les fiches |
-| `POST` | `/` | Ajouter une nouvelle fiche |
-| `PUT` | `/:id` | Mettre à jour une fiche (par ex., marquer comme connue) |
-| `DELETE` | `/:id` | Supprimer une fiche |
+| `GET` | `/` | Afficher la liste de toutes les fiches |
+| `POST` | `/bulk` | Ajouter une ou plusieurs fiches à la fois (accepte un tableau) |
+| `PATCH` | `/:id` | Marquer une fiche comme connue/inconnue (incrémente le nombre de révisions) |
+| `DELETE` | `/` | Supprimer **toutes** les fiches de l'utilisateur actuel |
 
 ### IA — `/api/ai`
 | Méthode | Point de terminaison | Description |
@@ -174,6 +180,7 @@ Toutes les routes API sont préfixées par `/api`.
 ### Stockage — `/api/storage` *(authentification requise)*
 | Méthode | Point de terminaison | Description |
 |---|---|---|
+| `GET` / `POST` | `/bulk` | Récupération simultanée de plusieurs valeurs stockées (utilisation de `POST` pour transmettre les clés dans le corps de la requête) |
 | `GET` | `/:key` | Récupérer une valeur stockée par clé |
 | `PUT` | `/:key` | Définir / mettre à jour une valeur stockée |
 | `DELETE` | `/:key` | Supprimer une clé stockée |
@@ -310,16 +317,18 @@ ai-language-learning/
 
 4. **Configurer les variables d'environnement**
 
-   Créez un fichier `.env` à la racine du projet :
-   ```env
-   OPENROUTER_API_KEY="votre_clé_api_openrouter_ici"
-
-   # Chaîne de connexion PostgreSQL
-   DATABASE_URL="postgresql://utilisateur:mot_de_passe@localhost:5432/votre_base_de_données"
-
-   # Secret JWT (utilisez des chaînes longues et aléatoires)
-   JWT_SECRET="votre_secret_jwt_ici"
+   Copiez le fichier d'exemple et remplacez-le par vos propres valeurs :
+   ```sh
+   cp .env.example .env
    ```
+
+   | Variable | Obligatoire | Description |
+   |---|---|---|
+   | `PORT` | Non (valeur par défaut : `3000`) | Port sur lequel le serveur Express est à l'écoute |
+   | `DATABASE_URL` | Oui | Chaîne de connexion PostgreSQL |
+   | `OPENROUTER_API_KEY` | Oui | Clé API provenant d'[OpenRouter](https://openrouter.ai/keys) |
+   | `JWT_SECRET` | Oui | Chaîne aléatoire longue utilisée pour signer les jetons d'accès |
+   | `JWT_REFRESH_SECRET` | Non (valeur par défaut : `JWT_SECRET + « _refresh »`) | Secret distinct pour la signature des jetons de rafraîchissement |
 
 5. **Lancer l'application**
 
@@ -375,4 +384,4 @@ Les pull requests sont les bienvenues. Pour les modifications importantes, veuil
 
 ## Licence
 
-Ce projet est open source. Consultez le dépôt pour plus de détails sur la licence.
+[MIT](./LICENSE) — pour plus de détails, consultez le fichier [LICENSE](./LICENSE).
