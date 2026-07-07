@@ -4,6 +4,7 @@ const jwt = require("../utils/jwt");
 const AppError = require("../utils/AppError");
 
 const REFRESH_DAYS = 30;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function setTokenCookies(res, accessToken, refreshToken) {
   res.cookie("token", accessToken, {
@@ -41,6 +42,9 @@ module.exports = {
         return next(new AppError("Email and password are required", 400));
 
       email = email.trim().toLowerCase();
+
+      if (!EMAIL_RE.test(email))
+        return next(new AppError("Please enter a valid email address", 400));
 
       const existing = await db.query("SELECT id FROM users WHERE email=$1", [email]);
       if (existing.rows.length > 0)
