@@ -36,9 +36,11 @@ async function issueTokens(res, userId) {
 module.exports = {
   async signup(req, res, next) {
     try {
-      const { email, password, displayName } = req.body;
+      let { email, password, displayName } = req.body;
       if (!email || !password)
         return next(new AppError("Email and password are required", 400));
+
+      email = email.trim().toLowerCase();
 
       const existing = await db.query("SELECT id FROM users WHERE email=$1", [email]);
       if (existing.rows.length > 0)
@@ -60,9 +62,11 @@ module.exports = {
 
   async login(req, res, next) {
     try {
-      const { email, password } = req.body;
+      let { email, password } = req.body;
       if (!email || !password)
         return next(new AppError("Email and password are required", 400));
+
+      email = email.trim().toLowerCase();
 
       const result = await db.query("SELECT * FROM users WHERE email=$1", [email]);
       if (result.rows.length === 0)

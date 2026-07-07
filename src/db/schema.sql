@@ -5,6 +5,9 @@ CREATE TABLE IF NOT EXISTS users (
   display_name  TEXT,
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
+-- Belt-and-suspenders: guarantees no two rows differ only by case, even if
+-- some future code path inserts a user without going through authController.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users (LOWER(email));
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (
   id         SERIAL PRIMARY KEY,

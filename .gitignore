@@ -4,3 +4,4 @@
 .env.*.local
 *.env
 node_modules/
+rotateJWT.txt
