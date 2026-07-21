@@ -18,8 +18,8 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Run unit tests
-        run: ./automatic_tests/run-unit-tests.sh
+        run: bash ./automatic_tests/run-unit-tests.sh
       - name: Run integration tests
-        run: ./automatic_tests/run-integration-tests.sh
+        run: bash ./automatic_tests/run-integration-tests.sh
       - name: Audit dependencies (informational only)
         run: npm audit --audit-level=high || true
