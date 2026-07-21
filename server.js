@@ -59,10 +59,6 @@ app.get("/index", (req, res) => {
   res.sendFile(__dirname + "/public/index.html");
 });
 
-app.get("/index.html", (req, res) => {
-  res.redirect("/index");
-});
-
 const PORT = process.env.PORT || 3000;
 
 // Only bind a port when this file is run directly (`node server.js`).
