@@ -64,8 +64,16 @@ app.get("/index.html", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  if (process.env.NODE_ENV !== "production") {
-    process.stdout.write(`Server running on http://localhost:${PORT}\n`);
-  }
-});
+
+// Only bind a port when this file is run directly (`node server.js`).
+// When it's `require`d — e.g. by integration tests via supertest — we just
+// export the configured app and let the caller decide how to use it.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    if (process.env.NODE_ENV !== "production") {
+      process.stdout.write(`Server running on http://localhost:${PORT}\n`);
+    }
+  });
+}
+
+module.exports = app;
