@@ -41,14 +41,9 @@ describe("cross-cutting error handling", () => {
     expect(res.headers["content-type"]).toMatch(/html/);
   });
 
-  // Note: express.static("public") is mounted before the custom "/index.html"
-  // redirect handler, and public/index.html exists — so static file serving
-  // wins and the redirect route is effectively unreachable for GET requests.
-  // This test documents that actual, current behavior rather than the
-  // apparently-intended redirect.
-  it("serves the static index.html directly for /index.html (the redirect route is shadowed by express.static)", async () => {
+  it("redirects /index.html to /index", async () => {
     const res = await request(app).get("/index.html");
-    expect(res.status).toBe(200);
-    expect(res.headers["content-type"]).toMatch(/html/);
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe("/index");
   });
 });

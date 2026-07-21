@@ -15,7 +15,10 @@ function setTokenCookies(res, accessToken, refreshToken) {
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
     sameSite: "lax",
-    path: "/api/auth/refresh",
+    // Scoped to /api/auth (not just /api/auth/refresh) so that logout can
+    // also read this cookie and revoke the token server-side. Still kept
+    // out of every non-auth request.
+    path: "/api/auth",
     maxAge: REFRESH_DAYS * 24 * 60 * 60 * 1000,
   });
 }
@@ -130,7 +133,7 @@ module.exports = {
         await db.query("DELETE FROM refresh_tokens WHERE token=$1", [token]);
       }
       res.clearCookie("token");
-      res.clearCookie("refresh_token", { path: "/api/auth/refresh" });
+      res.clearCookie("refresh_token", { path: "/api/auth" });
       res.json({ success: true });
     } catch {
       res.json({ success: true }); // always succeed on logout

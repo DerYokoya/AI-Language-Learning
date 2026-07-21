@@ -95,7 +95,7 @@ describe("auth flow (signup -> login -> me -> refresh -> logout)", () => {
     expect(fakeDb._state().refreshTokens).toHaveLength(1);
   });
 
-  it("logs out and ends the client session, even though the refresh cookie's own path scoping keeps logout from seeing it", async () => {
+  it("logs out, clears cookies, and revokes the refresh token so it can't be reused", async () => {
     const agent = request.agent(app);
     await agent.post("/api/auth/signup").send({ email: "frank@example.com", password: "pw" });
     expect(fakeDb._state().refreshTokens).toHaveLength(1);
@@ -104,14 +104,10 @@ describe("auth flow (signup -> login -> me -> refresh -> logout)", () => {
     expect(logout.status).toBe(200);
     expect(logout.body).toEqual({ success: true });
 
-    // Note: refresh_token is set with `path: "/api/auth/refresh"`, so it's
-    // never sent to /api/auth/logout in the first place — the DELETE in
-    // authController.logout is a no-op here and the row is left behind.
-    expect(fakeDb._state().refreshTokens).toHaveLength(1);
+    // refresh_token is scoped to path "/api/auth", which covers
+    // /api/auth/logout too, so logout can actually read and delete it.
+    expect(fakeDb._state().refreshTokens).toHaveLength(0);
 
-    // The end-to-end effect for the client is still a logged-out session:
-    // logout's Set-Cookie response clears refresh_token for that path, so
-    // the agent no longer has anything to send on the next /refresh call.
     const refreshAttempt = await agent.post("/api/auth/refresh");
     expect(refreshAttempt.status).toBe(401);
     expect(refreshAttempt.body).toEqual({ error: "No refresh token" });

@@ -52,12 +52,22 @@ app.use("/api/flashcards", flashcardRoutes);
 app.use("/api/ai", aiLimiter, aiRoutes);
 app.use("/api/storage", storageRoutes);
 
-app.use(express.static("public"));
-app.use(errorHandler);
-
+// These need to come before express.static — a static public/index.html
+// would otherwise be served directly for GET /index.html, and this redirect
+// would never run.
 app.get("/index", (req, res) => {
   res.sendFile(__dirname + "/public/index.html");
 });
+
+app.get("/index.html", (req, res) => {
+  res.redirect("/index");
+});
+
+app.use(express.static("public"));
+
+// Must be the last app.use() — Express only routes errors to error-handling
+// middleware registered after the route that threw.
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
