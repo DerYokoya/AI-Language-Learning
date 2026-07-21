@@ -209,7 +209,7 @@ Toutes les routes API sont préfixées par `/api`.
 ai-language-learning/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml            # GitHub Actions : matrice de tests, validation du schéma, audit
+│       └── ci.yml             # GitHub Actions : matrice de tests unitaires + d'intégration, audit des dépendances
 ├── public/                   # Interface statique
 │   ├── index.html
 │   ├── logo.svg / logo.ico
@@ -267,7 +267,25 @@ ai-language-learning/
 │   ├── flashcardController.test.js
 │   ├── authMiddleware.test.js
 │   ├── hash.test.js
-│   └── jwt.test.js
+│   ├── jwt.test.js
+│   └── integration/               # Tests HTTP de bout en bout (supertest sur l'app réelle)
+│       ├── auth.integration.test.js
+│       ├── authorization.integration.test.js
+│       ├── authRateLimit.integration.test.js
+│       ├── chats.integration.test.js
+│       ├── flashcards.integration.test.js
+│       ├── storage.integration.test.js
+│       ├── users.integration.test.js
+│       ├── ai.integration.test.js
+│       ├── aiRateLimit.integration.test.js
+│       ├── errorHandling.integration.test.js
+│       └── helpers/
+│           ├── fakeDb.js          # Substitut en mémoire de la connexion Postgres
+│           └── fakeOpenrouter.js  # Faux client IA avec réponses/échecs contrôlables
+├── automatic_tests/           # Scripts pratiques encapsulant la suite Jest
+│   ├── run-all-tests.sh          # Tests unitaires + d'intégration
+│   ├── run-unit-tests.sh         # tests/*.test.js uniquement
+│   └── run-integration-tests.sh  # tests/integration/*.test.js uniquement
 ├── screenshots/
 ├── jest.config.js            # Configuration Jest
 ├── server.js                 # Point d'entrée de l'application Express
@@ -281,7 +299,7 @@ ai-language-learning/
 ## Conception de l'authentification
 
 - **Jetons d'accès** — JWT à courte durée de vie (15 min) fournis sous forme de cookie `HttpOnly`.
-- **Jetons de rafraîchissement** — JWT à longue durée de vie (30 jours) stockés à la fois dans un cookie `HttpOnly` (dont l'accès est limité au chemin `/api/auth/refresh`) et dans la base de données en vue de leur révocation.
+- **Jetons de rafraîchissement** — JWT à longue durée de vie (30 jours) stockés à la fois dans un cookie `HttpOnly` (dont l'accès est limité au chemin `/api/auth`, afin qu'il soit envoyé à chaque point de terminaison d'authentification, y compris la déconnexion) et dans la base de données en vue de leur révocation.
 - **Rotation des jetons** — chaque appel de rafraîchissement supprime l'ancien jeton et émet une nouvelle paire, empêchant ainsi les attaques par rejeu.
 - **Déconnexion** — supprime explicitement le jeton d'actualisation de la base de données et efface les deux cookies.
 
@@ -362,7 +380,9 @@ Le projet inclut une suite de tests Jest complète couvrant les contrôleurs, le
 
 ## Tests
 
-Le projet est livré avec une suite Jest couvrant le cœur du backend :
+Le projet comporte deux niveaux de couverture Jest : les **tests unitaires**, qui appellent directement les contrôleurs, middlewares et utilitaires avec des dépendances simulées, et les **tests d'intégration**, qui font tourner l'application Express réelle de bout en bout via HTTP avec `supertest`: vrais routeurs, vrais middlewares, vrais cookies/JWT, vrais limiteurs de débit, tout en ne simulant que les deux véritables dépendances externes (Postgres et le client OpenRouter).
+
+### Tests unitaires (`tests/*.test.js`)
 
 | Fichier | Ce qui est testé |
 |---|---|
@@ -374,26 +394,49 @@ Le projet est livré avec une suite Jest couvrant le cœur du backend :
 | `hash.test.js` | Aides au hachage et à la comparaison bcrypt |
 | `jwt.test.js` | Signature et vérification des jetons d'accès et de rafraîchissement |
 
+### Tests d'intégration (`tests/integration/*.test.js`)
+
+| Fichier | Ce qui est testé |
+|---|---|
+| `auth.integration.test.js` | Flux complet inscription → connexion → `/me` → actualisation → déconnexion, en HTTP réel |
+| `authorization.integration.test.js` | Câblage de `requireAuth` sur chaque routeur protégé, et isolation des données entre utilisateurs |
+| `chats.integration.test.js` | Cycle CRUD complet des chats, suppression en cascade, ordre de la liste |
+| `flashcards.integration.test.js` | Ajout en masse, mises à jour de révision, isolation par utilisateur, vidage du paquet |
+| `storage.integration.test.js` | Stockage clé/valeur : set/get/bulk/delete |
+| `users.integration.test.js` | `/me` et mise à jour (upsert) des paramètres |
+| `ai.integration.test.js` | Tous les modes IA et le mappage des erreurs amont (429 / 503) |
+| `aiRateLimit.integration.test.js` | Limites IA invité (10/min) vs. authentifié (30/min) |
+| `authRateLimit.integration.test.js` | Limiteur anti force brute de l'authentification (20 tentatives / 15 min) |
+| `errorHandling.integration.test.js` | 404, JSON malformé, forme `{ error }` cohérente, routage statique |
+
 Exécuter la suite :
 
 ```sh
-npm test              # exécuter une fois
-npm run test:coverage # avec rapport de couverture
+npm test              # tout, une fois
+npm run test:coverage # tout, avec rapport de couverture
+```
+
+Ou utiliser les scripts pratiques dans [`automatic_tests/`](./automatic_tests) :
+
+```sh
+./automatic_tests/run-all-tests.sh         # unitaires + intégration
+./automatic_tests/run-unit-tests.sh        # unitaires uniquement
+./automatic_tests/run-integration-tests.sh # intégration uniquement
 ```
 
 ---
 
 ## Intégration continue
 
-Chaque push et chaque pull request vers la branche `main` passe par [GitHub Actions](.github/workflows/ci.yml) :
+Chaque push et chaque pull request passe par [GitHub Actions](.github/workflows/ci.yml) sur une matrice Node **18 / 20 / 22** :
 
-| Tâche | Description |
+| Étape | Description |
 |---|---|
-| **Test** | Exécute la suite de tests Jest avec couverture sur une matrice Node **18 / 20 / 22** |
-| **Vérification de la bonne application du schéma Postgres** | Lance un véritable conteneur de service `postgres:16` et y applique le fichier `src/db/schema.sql`, détectant ainsi les régressions du schéma avant qu’elles n’atteignent l’environnement de production |
-| **Audit des dépendances** | Exécute `npm audit --audit-level=high` pour signaler les vulnérabilités élevées/critiques |
+| **Run unit tests** | `bash ./automatic_tests/run-unit-tests.sh` — la suite `tests/*.test.js` |
+| **Run integration tests** | `bash ./automatic_tests/run-integration-tests.sh`. La suite complète au niveau HTTP dans `tests/integration/` |
+| **Audit des dépendances** | Exécute `npm audit --audit-level=high` |
 
-Les rapports de couverture sont téléchargés en tant qu’artefact de build à chaque exécution. Les échecs de CI ne bloquent pas automatiquement le déploiement pour le moment. Les fusions vers la branche `main` nécessitent toujours de passer les vérifications si la protection des branches est activée sur le dépôt.
+Les échecs de CI ne bloquent pas automatiquement le déploiement pour le moment. Les fusions nécessitent toujours de passer les vérifications si la protection des branches est activée sur le dépôt.
 
 ## Contribuer
 

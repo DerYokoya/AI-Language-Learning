@@ -210,7 +210,7 @@ All API routes are prefixed with `/api`.
 ai-language-learning/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml             # GitHub Actions: test matrix, schema check, audit
+│       └── ci.yml             # GitHub Actions: unit + integration test matrix, dependency audit
 ├── public/                   # Static frontend
 │   ├── index.html
 │   ├── logo.svg / logo.ico
@@ -268,7 +268,25 @@ ai-language-learning/
 │   ├── flashcardController.test.js
 │   ├── authMiddleware.test.js
 │   ├── hash.test.js
-│   └── jwt.test.js
+│   ├── jwt.test.js
+│   └── integration/               # End-to-end HTTP tests (supertest against the real app)
+│       ├── auth.integration.test.js
+│       ├── authorization.integration.test.js
+│       ├── authRateLimit.integration.test.js
+│       ├── chats.integration.test.js
+│       ├── flashcards.integration.test.js
+│       ├── storage.integration.test.js
+│       ├── users.integration.test.js
+│       ├── ai.integration.test.js
+│       ├── aiRateLimit.integration.test.js
+│       ├── errorHandling.integration.test.js
+│       └── helpers/
+│           ├── fakeDb.js          # In-memory stand-in for the Postgres connection
+│           └── fakeOpenrouter.js  # Fake AI client with controllable replies/failures
+├── automatic_tests/           # Convenience scripts wrapping the Jest suite
+│   ├── run-all-tests.sh          # Unit + integration tests
+│   ├── run-unit-tests.sh         # tests/*.test.js only
+│   └── run-integration-tests.sh  # tests/integration/*.test.js only
 ├── screenshots/
 ├── jest.config.js            # Jest configuration
 ├── server.js                 # Express app entry point
@@ -282,7 +300,7 @@ ai-language-learning/
 ## Authentication Design
 
 - **Access tokens** — short-lived JWTs (15 min) delivered as an `HttpOnly` cookie.
-- **Refresh tokens** — long-lived JWTs (30 days) stored in both an `HttpOnly` cookie (path-restricted to `/api/auth/refresh`) and the database for revocation.
+- **Refresh tokens** — long-lived JWTs (30 days) stored in both an `HttpOnly` cookie (path-restricted to `/api/auth`, so it's sent to every auth endpoint, including logout, but nowhere else) and the database for revocation.
 - **Token rotation** — every refresh call deletes the old token and issues a new pair, preventing replay attacks.
 - **Logout** — explicitly deletes the refresh token from the database and clears both cookies.
 
@@ -363,7 +381,9 @@ The project includes a full Jest test suite covering controllers, middleware, an
 
 ## Testing
 
-The project ships with a Jest test suite covering the core backend:
+The project has two layers of Jest coverage: **unit tests**, which call controllers, middleware, and utilities directly with mocked dependencies, and **integration tests**, which drive the real Express app end-to-end over HTTP with `supertest` — real routers, real middleware, real cookies/JWTs, real rate limiters, faking out only the two genuine external dependencies (Postgres and the OpenRouter client).
+
+### Unit tests (`tests/*.test.js`)
 
 | File | What it tests |
 |---|---|
@@ -375,26 +395,49 @@ The project ships with a Jest test suite covering the core backend:
 | `hash.test.js` | bcrypt hashing and comparison helpers |
 | `jwt.test.js` | Access and refresh token signing and verification |
 
+### Integration tests (`tests/integration/*.test.js`)
+
+| File | What it tests |
+|---|---|
+| `auth.integration.test.js` | Full signup → login → `/me` → refresh → logout flow over real HTTP |
+| `authorization.integration.test.js` | `requireAuth` wiring across every protected router, plus cross-user data isolation |
+| `chats.integration.test.js` | Full chats CRUD lifecycle, cascade deletes, list ordering |
+| `flashcards.integration.test.js` | Bulk add, review updates, per-user isolation, clearing the deck |
+| `storage.integration.test.js` | Key/value storage set/get/bulk/delete |
+| `users.integration.test.js` | `/me` and settings upsert |
+| `ai.integration.test.js` | All AI modes and upstream error mapping (429 / 503) |
+| `aiRateLimit.integration.test.js` | Guest (10/min) vs. authenticated (30/min) AI rate limits |
+| `authRateLimit.integration.test.js` | Auth brute-force limiter (20 attempts / 15 min) |
+| `errorHandling.integration.test.js` | 404s, malformed JSON, consistent `{ error }` shape, static routing |
+
 Run the suite:
 
 ```sh
-npm test              # run once
-npm run test:coverage # with coverage report
+npm test              # everything, once
+npm run test:coverage # everything, with a coverage report
+```
+
+Or use the convenience scripts in [`automatic_tests/`](./automatic_tests):
+
+```sh
+./automatic_tests/run-all-tests.sh         # unit + integration
+./automatic_tests/run-unit-tests.sh        # unit only
+./automatic_tests/run-integration-tests.sh # integration only
 ```
 
 ---
 
 ## Continuous Integration
 
-Every push and pull request to `main` runs through [GitHub Actions](.github/workflows/ci.yml):
+Every push and pull request runs through [GitHub Actions](.github/workflows/ci.yml) across a Node **18 / 20 / 22** matrix:
 
-| Job | What it does |
+| Step | What it does |
 |---|---|
-| **Test** | Runs the Jest suite with coverage across a Node **18 / 20 / 22** matrix |
-| **Verify Postgres schema applies cleanly** | Spins up a real `postgres:16` service container and applies `src/db/schema.sql` against it, catching schema regressions before they reach production |
-| **Dependency audit** | Runs `npm audit --audit-level=high` to flag high/critical vulnerabilities |
+| **Run unit tests** | `bash ./automatic_tests/run-unit-tests.sh` — the `tests/*.test.js` suite |
+| **Run integration tests** | `bash ./automatic_tests/run-integration-tests.sh` — the full HTTP-level suite in `tests/integration/` |
+| **Audit dependencies** | Runs `npm audit --audit-level=high` |
 
-Coverage reports are uploaded as a build artifact on each run. CI failures don't currently block deployment automatically. Merges to `main` still require passing checks if branch protection is enabled on the repo.
+CI failures don't currently block deployment automatically. Merges still require passing checks if branch protection is enabled on the repo.
 
 ---
 
