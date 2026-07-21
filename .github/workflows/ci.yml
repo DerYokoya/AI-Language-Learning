@@ -22,4 +22,4 @@ jobs:
       - name: Run integration tests
         run: bash ./automatic_tests/run-integration-tests.sh
       - name: Audit dependencies (informational only)
-        run: npm audit --audit-level=high || true
+        run: npm audit --audit-level=high
