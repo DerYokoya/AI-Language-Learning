@@ -1,6 +1,7 @@
 import { appStorage } from './appStorage.js';
 import { addMessage, stripMarkdown } from './chat.js';
 import { conversationHistory } from './main.js';
+import * as sm2 from './sm2.js';
 
 let currentFlashcardOverlay = null;
 
@@ -8,7 +9,12 @@ let currentFlashcardOverlay = null;
 export async function loadSavedCards() {
   try {
     const raw = await appStorage.getItem("fc_cards");
-    return raw ? JSON.parse(raw) : [];
+    const cards = raw ? JSON.parse(raw) : [];
+    // Backfill SM-2 fields for cards saved before spaced repetition existed,
+    // so old decks keep working without a manual migration step.
+    return cards.map((c) =>
+      c.nextReview ? c : { ...sm2.newSchedule(), ...c }
+    );
   } catch (e) {
     return [];
   }
@@ -18,21 +24,33 @@ async function saveCards(cards) {
   await appStorage.setItem("fc_cards", JSON.stringify(cards));
 }
 
-export async function markCard(id, known) {
+/**
+ * Grade a card after review using the SM-2 algorithm (see sm2.js).
+ * `quality` is one of sm2.GRADES (Again/Hard/Good/Easy). This replaces the
+ * old binary known/unknown flag with a real spaced-repetition schedule:
+ * every grade updates the card's ease factor, interval, and next-due date.
+ */
+export async function markCard(id, quality) {
   const cards = await loadSavedCards();
   const card = cards.find((c) => c.id === id);
-  if (card) {
-    card.known = known;
-    card.reviewCount = (card.reviewCount || 0) + 1;
-    await saveCards(cards);
-  }
+  if (!card) return null;
+
+  const nextSchedule = sm2.grade(card, quality);
+  Object.assign(card, nextSchedule);
+  card.reviewCount = (card.reviewCount || 0) + 1;
+  // Kept for backward compatibility with anything still reading `known`
+  // (e.g. older saved UI state); derived from the new schedule, not set directly.
+  card.known = sm2.isLearned(card);
+  await saveCards(cards);
+  return card;
 }
 
 export function getStats(cards) {
   const total = cards.length;
-  const known = cards.filter((c) => c.known).length;
+  const known = cards.filter((c) => sm2.isLearned(c)).length;
+  const due = cards.filter((c) => sm2.isDue(c)).length;
   const unknown = total - known;
-  return { total, known, unknown };
+  return { total, known, unknown, due };
 }
 
 async function mergeNewCards(newCards, language, difficulty) {
@@ -53,6 +71,7 @@ async function mergeNewCards(newCards, language, difficulty) {
         known: false,
         addedAt: new Date().toISOString(),
         reviewCount: 0,
+        ...sm2.newSchedule(), // easeFactor, interval, repetitions, nextReview — due now
       });
       added++;
     }
@@ -138,8 +157,9 @@ ${historyText || "(no conversation yet)"}`,
   const langCards = allCards
     .filter((c) => c.language === targetLanguage)
     .sort((a, b) => {
-      if (a.known === b.known) return 0;
-      return a.known ? 1 : -1;
+      const aDue = sm2.isDue(a), bDue = sm2.isDue(b);
+      if (aDue !== bDue) return aDue ? -1 : 1; // due cards first
+      return new Date(a.nextReview) - new Date(b.nextReview); // soonest due next
     });
 
   startFlashcardMode(langCards, added);
@@ -215,7 +235,7 @@ function startFlashcardMode(cards, newlyAdded = 0) {
         white-space: pre-wrap; flex-direction: column; gap: 8px;
       ">
         <span id="fc-text" style="font-size:1.5rem; color:${t.text};"></span>
-        <span id="fc-known-badge" style="font-size:12px; display:none; padding:2px 10px; border-radius:999px; background:#4caf50; color:#fff; font-weight:600;">✓ Known</span>
+        <span id="fc-known-badge" style="font-size:12px; display:none; padding:2px 10px; border-radius:999px; background:#4caf50; color:#fff; font-weight:600;">✓ Learned</span>
       </div>
       <p id="fc-hint" style="font-size:13px; color:${t.hint}; margin-top:10px; min-height:18px;"></p>
 
@@ -225,10 +245,13 @@ function startFlashcardMode(cards, newlyAdded = 0) {
         <button id="fc-next" style="padding:10px 18px; border-radius:9px; border:1px solid ${t.btnBorder}; cursor:pointer; font-size:14px; background:${t.btnBg}; color:${t.btnText};">Next →</button>
       </div>
 
-      <div style="display:flex; gap:12px; margin-top:14px; justify-content:center; flex-wrap:wrap; align-items:center;">
-        <button id="fc-unknown" style="padding:11px 24px; border-radius:10px; border:2px solid #ef5350; background:${t.btnBg}; color:#ef5350; cursor:pointer; font-size:14px; font-weight:600;">✗ Don't Know</button>
-        <button id="fc-known" style="padding:11px 24px; border-radius:10px; border:2px solid #4caf50; background:${t.btnBg}; color:#4caf50; cursor:pointer; font-size:14px; font-weight:600;">✓ Know It</button>
+      <div style="display:flex; gap:8px; margin-top:14px; justify-content:center; flex-wrap:wrap; align-items:center;">
+        <button id="fc-grade-again" data-quality="0" style="padding:10px 16px; border-radius:10px; border:2px solid #ef5350; background:${t.btnBg}; color:#ef5350; cursor:pointer; font-size:13px; font-weight:600;">✗ Again</button>
+        <button id="fc-grade-hard" data-quality="3" style="padding:10px 16px; border-radius:10px; border:2px solid #ffa726; background:${t.btnBg}; color:#ffa726; cursor:pointer; font-size:13px; font-weight:600;">😓 Hard</button>
+        <button id="fc-grade-good" data-quality="4" style="padding:10px 16px; border-radius:10px; border:2px solid #42a5f5; background:${t.btnBg}; color:#42a5f5; cursor:pointer; font-size:13px; font-weight:600;">🙂 Good</button>
+        <button id="fc-grade-easy" data-quality="5" style="padding:10px 16px; border-radius:10px; border:2px solid #4caf50; background:${t.btnBg}; color:#4caf50; cursor:pointer; font-size:13px; font-weight:600;">✓ Easy</button>
       </div>
+      <p id="fc-next-review" style="font-size:12px; color:${t.hint}; margin-top:6px; min-height:16px;"></p>
 
       <div style="margin-top:10px; text-align:center;">
         <button id="fc-autoskip-toggle" style="padding:5px 16px; border-radius:999px; border:1px solid ${t.btnBorder}; background:${t.btnBg}; color:${t.hint}; cursor:pointer; font-size:12px;">⏭ Auto-skip: OFF</button>
@@ -236,7 +259,7 @@ function startFlashcardMode(cards, newlyAdded = 0) {
 
       <div style="display:flex; gap:8px; margin-top:16px; justify-content:center; font-size:13px; flex-wrap:wrap;">
         <button id="fc-tab-all" class="fc-tab" style="padding:5px 14px; border-radius:999px; border:1px solid #5b6af0; background:#5b6af0; color:#fff; cursor:pointer; font-size:12px;">All</button>
-        <button id="fc-tab-unknown" class="fc-tab" style="padding:5px 14px; border-radius:999px; border:1px solid ${t.tabInactBdr}; background:${t.tabInactBg}; color:${t.tabInactTxt}; cursor:pointer; font-size:12px;">❓ Study</button>
+        <button id="fc-tab-due" class="fc-tab" style="padding:5px 14px; border-radius:999px; border:1px solid ${t.tabInactBdr}; background:${t.tabInactBg}; color:${t.tabInactTxt}; cursor:pointer; font-size:12px;">⏰ Due</button>
         <button id="fc-tab-known" class="fc-tab" style="padding:5px 14px; border-radius:999px; border:1px solid ${t.tabInactBdr}; background:${t.tabInactBg}; color:${t.tabInactTxt}; cursor:pointer; font-size:12px;">✓ Mastered</button>
         <button id="fc-clear-deck" style="padding:5px 14px; border-radius:999px; border:1px solid #f44336; background:${t.btnBg}; color:#f44336; cursor:pointer; font-size:12px;">🗑 Clear Deck</button>
       </div>
@@ -252,8 +275,11 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     const all = (await loadSavedCards()).filter(
       (c) => c.language === document.getElementById("language-select").value
     );
-    if (activeView === "unknown") return all.filter((c) => !c.known);
-    if (activeView === "known") return all.filter((c) => c.known);
+    if (activeView === "due")
+      return all
+        .filter((c) => sm2.isDue(c))
+        .sort((a, b) => new Date(a.nextReview) - new Date(b.nextReview));
+    if (activeView === "known") return all.filter((c) => sm2.isLearned(c));
     return all;
   }
 
@@ -264,8 +290,8 @@ function startFlashcardMode(cards, newlyAdded = 0) {
       document.getElementById("fc-text").textContent =
         activeView === "known"
           ? "No mastered cards yet. Keep studying!"
-          : activeView === "unknown"
-          ? "🎉 You've mastered all cards in this view!"
+          : activeView === "due"
+          ? "🎉 Nothing due right now — come back later!"
           : "No cards yet. Generate some with the Flashcards button!";
       document.getElementById("fc-hint").textContent = "";
       document.getElementById("fc-known-badge").style.display = "none";
@@ -279,7 +305,7 @@ function startFlashcardMode(cards, newlyAdded = 0) {
   async function updateStats() {
     const allLang = (await loadSavedCards()).filter((c) => c.language === document.getElementById("language-select").value);
     const s = getStats(allLang);
-    document.getElementById("fc-stats").textContent = `✓ ${s.known} / ${s.total}`;
+    document.getElementById("fc-stats").textContent = `✓ ${s.known} / ${s.total} · ⏰ ${s.due} due`;
     const pct = s.total > 0 ? (s.known / s.total) * 100 : 0;
     document.getElementById("fc-progress-bar").style.width = pct + "%";
   }
@@ -287,14 +313,18 @@ function startFlashcardMode(cards, newlyAdded = 0) {
   async function render() {
     if (!viewCards.length) { await refreshViewCards(); return; }
     const card = viewCards[currentIndex];
+    const learned = sm2.isLearned(card);
     flipped = false;
     document.getElementById("fc-text").textContent = card.front;
     document.getElementById("fc-card").style.background = t.cardBg;
-    document.getElementById("fc-card").style.borderColor = card.known ? "#4caf50" : t.cardBorder;
+    document.getElementById("fc-card").style.borderColor = learned ? "#4caf50" : t.cardBorder;
     document.getElementById("fc-hint").textContent = "Click the card to flip • Space or Enter to flip";
     document.getElementById("fc-counter").textContent = `Card ${currentIndex + 1} of ${viewCards.length}`;
+    document.getElementById("fc-next-review").textContent = sm2.isDue(card)
+      ? "Due now"
+      : `Next review: ${new Date(card.nextReview).toLocaleDateString()}`;
     const badge = document.getElementById("fc-known-badge");
-    badge.style.display = card.known ? "inline-block" : "none";
+    badge.style.display = learned ? "inline-block" : "none";
     await updateStats();
   }
 
@@ -313,10 +343,10 @@ function startFlashcardMode(cards, newlyAdded = 0) {
       currentIndex++;
       await render();
     } else {
-      if (activeView === "unknown" && viewCards.length > 0) {
-        const remainingUnknown = viewCards.filter(c => !c.known).length;
-        if (remainingUnknown === 0) {
-          addMessage("🎉 Congratulations! You've mastered all cards in this session!", "system-success");
+      if (activeView === "due" && viewCards.length > 0) {
+        const remainingDue = viewCards.filter((c) => sm2.isDue(c)).length;
+        if (remainingDue === 0) {
+          addMessage("🎉 Congratulations! You've cleared your review queue!", "system-success");
         }
       }
       currentIndex = 0;
@@ -324,41 +354,31 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     }
   }
 
-  async function doKnown() {
+  /**
+   * Grade the current card via SM-2 (quality: sm2.GRADES.AGAIN/HARD/GOOD/EASY)
+   * and refresh the UI to reflect its new schedule. Replaces the old binary
+   * doKnown/doUnknown handlers now that every review updates a real
+   * ease-factor/interval/next-review schedule instead of a single flag.
+   */
+  async function doGrade(quality) {
     if (!viewCards.length) return;
     const card = viewCards[currentIndex];
-    await markCard(card.id, true);
-    card.known = true;
-    document.getElementById("fc-card").style.borderColor = "#4caf50";
-    document.getElementById("fc-known-badge").style.display = "inline-block";
+    const updated = await markCard(card.id, quality);
+    if (updated) Object.assign(card, updated);
+    const learned = sm2.isLearned(card);
+    document.getElementById("fc-card").style.borderColor = learned ? "#4caf50" : t.cardBorder;
+    document.getElementById("fc-known-badge").style.display = learned ? "inline-block" : "none";
+    document.getElementById("fc-next-review").textContent = `Next review: ${new Date(card.nextReview).toLocaleDateString()}`;
     await updateStats();
     if (autoSkip) {
       setTimeout(async () => {
+        // In the Due queue, a just-graded card may drop out of view entirely
+        // (its next review is now in the future), so re-fetch before deciding
+        // whether to advance the index or just re-render in place.
         const oldLen = viewCards.length;
         await refreshViewCards();
-        if (activeView !== "unknown" && oldLen === viewCards.length) {
+        if (activeView !== "due" || oldLen === viewCards.length) {
           await goToNextCard();
-        }
-      }, 300);
-    }
-  }
-
-  async function doUnknown() {
-    if (!viewCards.length) return;
-    const card = viewCards[currentIndex];
-    await markCard(card.id, false);
-    card.known = false;
-    document.getElementById("fc-card").style.borderColor = "#ef5350";
-    document.getElementById("fc-known-badge").style.display = "none";
-    await updateStats();
-    if (autoSkip) {
-      setTimeout(async () => {
-        if (currentIndex + 1 < viewCards.length) {
-          currentIndex++;
-          await render();
-        } else {
-          currentIndex = 0;
-          await render();
         }
       }, 300);
     }
@@ -367,7 +387,7 @@ function startFlashcardMode(cards, newlyAdded = 0) {
   async function setTab(tab) {
     activeView = tab;
     currentIndex = 0;
-    ["all", "unknown", "known"].forEach((tabId) => {
+    ["all", "due", "known"].forEach((tabId) => {
       const btn = document.getElementById(`fc-tab-${tabId}`);
       if (!btn) return;
       if (tabId === tab) {
@@ -388,8 +408,10 @@ function startFlashcardMode(cards, newlyAdded = 0) {
   // Event listeners
   document.getElementById("fc-card").addEventListener("click", doFlip);
   document.getElementById("fc-flip").addEventListener("click", doFlip);
-  document.getElementById("fc-known").addEventListener("click", doKnown);
-  document.getElementById("fc-unknown").addEventListener("click", doUnknown);
+  ["again", "hard", "good", "easy"].forEach((name) => {
+    const btn = document.getElementById(`fc-grade-${name}`);
+    btn.addEventListener("click", () => doGrade(Number(btn.dataset.quality)));
+  });
   document.getElementById("fc-prev").addEventListener("click", () => {
     currentIndex = (currentIndex - 1 + viewCards.length) % Math.max(1, viewCards.length);
     render();
@@ -398,7 +420,7 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     goToNextCard();
   });
   document.getElementById("fc-tab-all").addEventListener("click", () => setTab("all"));
-  document.getElementById("fc-tab-unknown").addEventListener("click", () => setTab("unknown"));
+  document.getElementById("fc-tab-due").addEventListener("click", () => setTab("due"));
   document.getElementById("fc-tab-known").addEventListener("click", () => setTab("known"));
   document.getElementById("fc-autoskip-toggle").addEventListener("click", () => {
     autoSkip = !autoSkip;
@@ -429,12 +451,12 @@ function startFlashcardMode(cards, newlyAdded = 0) {
     if (e.target === overlay) overlay.remove();
   });
 
-  const knownBtn = document.getElementById("fc-known");
-  const unknownBtn = document.getElementById("fc-unknown");
-  knownBtn.addEventListener("mouseenter", () => { knownBtn.style.background = "#4caf50"; knownBtn.style.color = "#fff"; });
-  knownBtn.addEventListener("mouseleave", () => { knownBtn.style.background = t.btnBg; knownBtn.style.color = "#4caf50"; });
-  unknownBtn.addEventListener("mouseenter", () => { unknownBtn.style.background = "#ef5350"; unknownBtn.style.color = "#fff"; });
-  unknownBtn.addEventListener("mouseleave", () => { unknownBtn.style.background = t.btnBg; unknownBtn.style.color = "#ef5350"; });
+  const gradeColors = { again: "#ef5350", hard: "#ffa726", good: "#42a5f5", easy: "#4caf50" };
+  Object.entries(gradeColors).forEach(([name, color]) => {
+    const btn = document.getElementById(`fc-grade-${name}`);
+    btn.addEventListener("mouseenter", () => { btn.style.background = color; btn.style.color = "#fff"; });
+    btn.addEventListener("mouseleave", () => { btn.style.background = t.btnBg; btn.style.color = color; });
+  });
 
   function onKey(e) {
     if (!document.getElementById("flashcard-overlay")) {
@@ -450,9 +472,13 @@ function startFlashcardMode(cards, newlyAdded = 0) {
       doFlip();
       e.preventDefault();
     } else if (e.key === "1") {
-      doUnknown();
+      doGrade(sm2.GRADES.AGAIN);
     } else if (e.key === "2") {
-      doKnown();
+      doGrade(sm2.GRADES.HARD);
+    } else if (e.key === "3") {
+      doGrade(sm2.GRADES.GOOD);
+    } else if (e.key === "4") {
+      doGrade(sm2.GRADES.EASY);
     } else if (e.key === "Escape") {
       overlay.remove();
     }
