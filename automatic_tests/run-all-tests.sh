@@ -18,4 +18,5 @@ if [ ! -d node_modules ]; then
 fi
 
 echo "==> Running full test suite (unit + integration) from $PROJECT_ROOT"
+export NODE_OPTIONS="${NODE_OPTIONS:-} --experimental-vm-modules"
 npx jest "$@"

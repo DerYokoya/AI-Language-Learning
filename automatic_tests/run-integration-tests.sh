@@ -20,4 +20,5 @@ if [ ! -d node_modules ]; then
 fi
 
 echo "==> Running integration tests only from $PROJECT_ROOT"
+export NODE_OPTIONS="${NODE_OPTIONS:-} --experimental-vm-modules"
 npx jest tests/integration "$@"
