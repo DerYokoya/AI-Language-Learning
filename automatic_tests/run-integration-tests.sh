@@ -19,4 +19,5 @@ fi
 
 echo "==> Running integration tests only from $PROJECT_ROOT"
 export NODE_OPTIONS="${NODE_OPTIONS:-} --experimental-vm-modules"
+export WSLENV="${WSLENV:+$WSLENV:}NODE_OPTIONS"
 npx jest tests/integration "$@"
