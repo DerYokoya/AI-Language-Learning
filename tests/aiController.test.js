@@ -13,6 +13,10 @@ function mockRes() {
   const res = {};
   res.status = jest.fn().mockReturnValue(res);
   res.json = jest.fn().mockReturnValue(res);
+  res.setHeader = jest.fn();
+  res.flushHeaders = jest.fn();
+  res.write = jest.fn();
+  res.end = jest.fn();
   return res;
 }
 
@@ -66,5 +70,28 @@ describe("aiController.ask", () => {
 
     expect(next).toHaveBeenCalledWith(expect.any(Error));
     expect(res.status).not.toHaveBeenCalled();
+  });
+});
+
+describe("aiController.stream", () => {
+  it("streams content deltas as SSE events", async () => {
+    mockCreate.mockResolvedValueOnce((async function* () {
+      yield { choices: [{ delta: { content: "¡Hola! " } }] };
+      yield { choices: [{ delta: { content: "¿Cómo estás?" } }] };
+    })());
+
+    const req = { body: { prompt: "Hello", targetLanguage: "Spanish", difficulty: "beginner" } };
+    const res = mockRes();
+    const next = mockNext();
+
+    await aiController.stream(req, res, next);
+
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ stream: true }));
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "text/event-stream; charset=utf-8");
+    expect(res.write).toHaveBeenNthCalledWith(1, 'data: "¡Hola! "\n\n');
+    expect(res.write).toHaveBeenNthCalledWith(2, 'data: "¿Cómo estás?"\n\n');
+    expect(res.write).toHaveBeenNthCalledWith(3, "data: [DONE]\n\n");
+    expect(res.end).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
   });
 });

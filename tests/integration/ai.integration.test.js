@@ -117,3 +117,21 @@ describe("POST /api/ai/ask", () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe("POST /api/ai/stream", () => {
+  it("returns tutor deltas as server-sent events", async () => {
+    fakeOpenrouter.__setStream(["¡Hola! ", "¿Cómo estás?"]);
+
+    const res = await request(app).post("/api/ai/stream").send({
+      prompt: "Hello",
+      targetLanguage: "Spanish",
+      difficulty: "Beginner",
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers["content-type"]).toMatch(/text\/event-stream/);
+    expect(res.text).toContain('data: "¡Hola! "\n\n');
+    expect(res.text).toContain('data: "¿Cómo estás?"\n\n');
+    expect(res.text).toContain("data: [DONE]\n\n");
+  });
+});

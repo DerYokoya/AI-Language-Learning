@@ -1,6 +1,29 @@
 const client = require("../services/openrouter");
 const AppError = require("../utils/AppError");
 
+function buildTutorPrompt(prompt, targetLanguage, difficulty) {
+  return `
+        System: You are a multilingual language-learning tutor.
+        The user may type in ANY language.
+        Detect the language the user is writing in.
+        Help the user learn ${targetLanguage}.
+        Adjust your explanations to the user's difficulty level: ${difficulty}.
+
+        Difficulty rules:
+        - Beginner: Use simple vocabulary, short sentences, slow progression.
+        - Intermediate: Use richer vocabulary, moderate complexity, examples.
+        - Advanced: Use natural, fluent, native-level expressions and deeper explanations.
+
+        Other rules:
+        - Always respond in ${targetLanguage}.
+        - ONLY correct the user when they write in ${targetLanguage}.
+        - If the user writes in another language, do NOT correct them — just answer normally.
+        - If the user switches languages, adapt automatically.
+
+        User: ${prompt}
+      `;
+}
+
 module.exports = {
   async ask(req, res, next) {
     try {
@@ -66,26 +89,7 @@ module.exports = {
         const reply = completion.choices[0].message.content;
         return res.json({ reply });
       }
-      const fullPrompt = `
-        System: You are a multilingual language-learning tutor.
-        The user may type in ANY language.
-        Detect the language the user is writing in.
-        Help the user learn ${targetLanguage}.
-        Adjust your explanations to the user's difficulty level: ${difficulty}.
-
-        Difficulty rules:
-        - Beginner: Use simple vocabulary, short sentences, slow progression.
-        - Intermediate: Use richer vocabulary, moderate complexity, examples.
-        - Advanced: Use natural, fluent, native-level expressions and deeper explanations.
-
-        Other rules:
-        - Always respond in ${targetLanguage}.
-        - ONLY correct the user when they write in ${targetLanguage}.
-        - If the user writes in another language, do NOT correct them — just answer normally.
-        - If the user switches languages, adapt automatically.
-
-        User: ${prompt}
-      `;
+      const fullPrompt = buildTutorPrompt(prompt, targetLanguage, difficulty);
 
       const completion = await client.chat.completions.create({
         model: "openrouter/free",
@@ -102,6 +106,43 @@ module.exports = {
         return next(new AppError("Rate limit reached. Please wait a moment before trying again.", 429));
       }
       console.error("AI request failed:", err);
+      next(new AppError("AI request failed", 503));
+    }
+  },
+
+  async stream(req, res, next) {
+    try {
+      const { prompt, targetLanguage, difficulty } = req.body;
+      const completion = await client.chat.completions.create({
+        model: "openrouter/free",
+        messages: [
+          { role: "system", content: "You are a helpful language tutor." },
+          { role: "user", content: buildTutorPrompt(prompt, targetLanguage, difficulty) },
+        ],
+        stream: true,
+      });
+
+      res.status(200);
+      res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache, no-transform");
+      res.setHeader("Connection", "keep-alive");
+      if (typeof res.flushHeaders === "function") res.flushHeaders();
+
+      for await (const chunk of completion) {
+        const content = chunk.choices?.[0]?.delta?.content;
+        if (content) res.write(`data: ${JSON.stringify(content)}\n\n`);
+      }
+      res.write("data: [DONE]\n\n");
+      res.end();
+    } catch (err) {
+      if (res.headersSent) {
+        res.write(`event: error\ndata: ${JSON.stringify("AI request failed")}\n\n`);
+        return res.end();
+      }
+      if (err.status === 429) {
+        return next(new AppError("Rate limit reached. Please wait a moment before trying again.", 429));
+      }
+      console.error("AI streaming request failed:", err);
       next(new AppError("AI request failed", 503));
     }
   },

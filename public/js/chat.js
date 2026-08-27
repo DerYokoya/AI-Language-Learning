@@ -247,6 +247,18 @@ export function addMessage(text, sender) {
   saveCurrentChat();
 }
 
+function createStreamingMessage() {
+  const msg = document.createElement("div");
+  msg.classList.add("message", "ai");
+  chatWindow.appendChild(msg);
+  return msg;
+}
+
+function updateStreamingMessage(msg, text) {
+  msg.innerHTML = marked.parse(text);
+  chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: "auto" });
+}
+
 export function loadChatHistory(history = null) {
   const messages =
     history ||
@@ -306,7 +318,7 @@ export async function sendMessage() {
   const prompt = getModePrompt(text, targetLanguage, difficulty);
 
   try {
-    const response = await fetch("/api/ai/ask", {
+    const response = await fetch("/api/ai/stream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -317,28 +329,79 @@ export async function sendMessage() {
       }),
     });
 
-    hideTyping();
-
     if (response.status === 429) {
+      hideTyping();
       addMessage("⏱️ Too many messages! Please wait a moment before sending another.", "system-error");
       return;
     }
 
     if (!response.ok) {
+      hideTyping();
       addMessage("⚠️ Server error. Please try again.", "ai");
       return;
     }
 
-    const data = await response.json();
-
-    if (!data.reply) {
+    if (!response.body) {
+      hideTyping();
       addMessage("⚠️ AI returned an empty response.", "ai");
       return;
     }
 
-    lastAIMessage = data.reply;
-    addMessage(data.reply, "ai");
-    speak(data.reply, langMap[targetLanguage]);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let streamingMessage = null;
+    let reply = "";
+    let buffer = "";
+    let finished = false;
+
+    const processEvents = (flush = false) => {
+      if (flush) buffer += decoder.decode();
+      const events = buffer.split("\n\n");
+      buffer = events.pop() || "";
+      for (const event of events) {
+        const dataLine = event.split("\n").find((line) => line.startsWith("data: "));
+        if (!dataLine) continue;
+        const data = dataLine.slice(6);
+        if (data === "[DONE]") {
+          finished = true;
+          continue;
+        }
+        try {
+          const delta = JSON.parse(data);
+          if (!delta) continue;
+          if (!streamingMessage) {
+            hideTyping();
+            streamingMessage = createStreamingMessage();
+          }
+          reply += delta;
+          updateStreamingMessage(streamingMessage, reply);
+        } catch (parseError) {
+          console.warn("Could not parse AI stream event:", parseError);
+        }
+      }
+    };
+
+    while (!finished) {
+      const { value, done } = await reader.read();
+      if (done) {
+        processEvents(true);
+        break;
+      }
+      buffer += decoder.decode(value, { stream: true });
+      processEvents();
+    }
+
+    if (!reply) {
+      hideTyping();
+      addMessage("⚠️ AI returned an empty response.", "ai");
+      return;
+    }
+
+    lastAIMessage = reply;
+    conversationHistory.push({ sender: "ai", text: reply });
+    persistMessage("ai", reply, streamingMessage.innerHTML);
+    saveCurrentChat();
+    speak(reply, langMap[targetLanguage]);
   } catch (err) {
     hideTyping();
     addMessage("⚠️ Network error. Check your server.", "ai");

@@ -5,6 +5,7 @@
  * `failNext` makes the next call reject, optionally with a given status.
  */
 let nextReply = "Default fake reply";
+let nextStream = null;
 let failure = null;
 
 module.exports = {
@@ -16,12 +17,24 @@ module.exports = {
           failure = null;
           throw err;
         }
+        if (nextStream) {
+          const stream = nextStream;
+          nextStream = null;
+          return stream;
+        }
         return { choices: [{ message: { content: nextReply } }] };
       }),
     },
   },
   __setReply(reply) {
     nextReply = reply;
+  },
+  __setStream(chunks) {
+    nextStream = (async function* () {
+      for (const content of chunks) {
+        yield { choices: [{ delta: { content } }] };
+      }
+    })();
   },
   __failNext(status) {
     const err = new Error("simulated upstream failure");
