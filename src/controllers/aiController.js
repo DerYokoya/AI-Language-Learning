@@ -24,6 +24,15 @@ function buildTutorPrompt(prompt, targetLanguage, difficulty) {
       `;
 }
 
+function buildContextPrompt(summary, recentMessages) {
+  const recent = (recentMessages || [])
+    .slice(-6)
+    .map(({ sender, text }) => `${sender === "user" ? "Student" : "Tutor"}: ${text}`)
+    .join("\n");
+  if (!summary && !recent) return "";
+  return `\nConversation context:\n${summary ? `Summary of earlier turns:\n${summary}\n` : ""}${recent ? `Recent turns:\n${recent}\n` : ""}Use this context to maintain continuity, but follow the current user request and tutor instructions.\n`;
+}
+
 module.exports = {
   async ask(req, res, next) {
     try {
@@ -112,12 +121,12 @@ module.exports = {
 
   async stream(req, res, next) {
     try {
-      const { prompt, targetLanguage, difficulty } = req.body;
+      const { prompt, targetLanguage, difficulty, summary, recentMessages } = req.body;
       const completion = await client.chat.completions.create({
         model: "openrouter/free",
         messages: [
           { role: "system", content: "You are a helpful language tutor." },
-          { role: "user", content: buildTutorPrompt(prompt, targetLanguage, difficulty) },
+          { role: "user", content: buildTutorPrompt(prompt, targetLanguage, difficulty) + buildContextPrompt(summary, recentMessages) },
         ],
         stream: true,
       });
@@ -143,6 +152,36 @@ module.exports = {
         return next(new AppError("Rate limit reached. Please wait a moment before trying again.", 429));
       }
       console.error("AI streaming request failed:", err);
+      next(new AppError("AI request failed", 503));
+    }
+  },
+
+  async summarize(req, res, next) {
+    try {
+      const { summary, messages } = req.body;
+      const transcript = (messages || [])
+        .map(({ sender, text }) => `${sender === "user" ? "Student" : "Tutor"}: ${text}`)
+        .join("\n");
+      const completion = await client.chat.completions.create({
+        model: "openrouter/free",
+        messages: [
+          {
+            role: "system",
+            content: "Summarize language-learning conversations compactly. Preserve goals, corrections, vocabulary, preferences, and unresolved topics. Return only the summary in plain text, under 120 words.",
+          },
+          {
+            role: "user",
+            content: `${summary ? `Existing summary:\n${summary}\n\n` : ""}Additional conversation turns:\n${transcript}`,
+          },
+        ],
+        temperature: 0.2,
+      });
+      res.json({ summary: completion.choices[0].message.content });
+    } catch (err) {
+      if (err.status === 429) {
+        return next(new AppError("Rate limit reached. Please wait a moment before trying again.", 429));
+      }
+      console.error("AI summary request failed:", err);
       next(new AppError("AI request failed", 503));
     }
   },

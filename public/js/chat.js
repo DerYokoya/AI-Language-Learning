@@ -20,6 +20,8 @@ let recognition = null;
 let currentMode = "conversation";
 let currentScenario = "restaurant";
 let isRecording = false;
+let conversationSummary = "";
+const RECENT_CONTEXT_MESSAGES = 6;
 
 const roleplayScenarios = {
   restaurant: "restaurant (ordering food, asking about menu, paying bill)",
@@ -49,6 +51,14 @@ export function getCurrentScenario() {
 
 export function setCurrentScenario(scenario) {
   currentScenario = scenario;
+}
+
+export function getConversationSummary() {
+  return conversationSummary;
+}
+
+export function setConversationSummary(summary) {
+  conversationSummary = summary || "";
 }
 
 // Mode-specific prompt builder
@@ -326,6 +336,8 @@ export async function sendMessage() {
         targetLanguage,
         difficulty,
         mode: currentMode,
+        summary: conversationSummary,
+        recentMessages: conversationHistory.slice(-RECENT_CONTEXT_MESSAGES),
       }),
     });
 
@@ -402,10 +414,36 @@ export async function sendMessage() {
     persistMessage("ai", reply, streamingMessage.innerHTML);
     saveCurrentChat();
     speak(reply, langMap[targetLanguage]);
+
+    if (conversationHistory.length > RECENT_CONTEXT_MESSAGES) {
+      refreshConversationSummary();
+    }
   } catch (err) {
     hideTyping();
     addMessage("⚠️ Network error. Check your server.", "ai");
     console.error(err);
+  }
+}
+
+async function refreshConversationSummary() {
+  const summaryBatch = conversationHistory.slice(
+    -(RECENT_CONTEXT_MESSAGES + 2),
+    -RECENT_CONTEXT_MESSAGES,
+  );
+  try {
+    const response = await fetch("/api/ai/summarize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ summary: conversationSummary, messages: summaryBatch }),
+    });
+    if (!response.ok) return;
+    const data = await response.json();
+    if (data.summary) {
+      conversationSummary = data.summary;
+      saveCurrentChat();
+    }
+  } catch (error) {
+    console.warn("Could not refresh conversation summary:", error);
   }
 }
 

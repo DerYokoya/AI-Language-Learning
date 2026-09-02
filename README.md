@@ -90,6 +90,11 @@ The API is protected against abuse with per-route rate limiting via `express-rat
 - **`/api/ai/ask`** — guests are limited to 10 requests per minute (keyed by IP); authenticated users get 30 requests per minute (keyed by user ID). Exceeding the limit returns a `429` response with a user-friendly message in the UI.
 - **`/api/auth`** — all auth endpoints (login, signup, refresh) are limited to 20 requests per 15 minutes per IP, protecting against brute-force attacks.
 
+### LLM Context Management
+Normal tutor responses stream incrementally through **`POST /api/ai/stream`**. To keep prompts within the model context window, each request includes the six most recent conversation messages plus a compact LLM-generated summary of older turns. The summary preserves learning goals, corrections, vocabulary, preferences, and unresolved topics, and is refreshed as the conversation grows.
+
+Authenticated chat sessions persist this summary in PostgreSQL (`chats.context_summary`). Guests keep it in `localStorage`. Structured activities such as cloze exercises, flashcards, and listening practice continue to use the non-streaming `/api/ai/ask` endpoint.
+
 ---
 
 ## System Architecture
@@ -179,6 +184,8 @@ All API routes are prefixed with `/api`.
 | Method | Endpoint | Description |
 |---|---|---|
 | `POST` | `/ask` | Send a prompt; returns an AI tutor response. Rate limited: 10 req/min (guests), 30 req/min (authenticated). |
+| `POST` | `/stream` | Stream a normal tutor response as server-sent events, with bounded recent-message context and a stored conversation summary. |
+| `POST` | `/summarize` | Create a compact summary of older conversation turns for context management. |
 
 ### Storage — `/api/storage` *(requires auth)*
 | Method | Endpoint | Description |
@@ -198,7 +205,7 @@ All API routes are prefixed with `/api`.
 | `refresh_tokens` | Persisted refresh tokens with expiry |
 | `user_settings` | Per-user theme, language, difficulty, auto-read preferences |
 | `user_storage` | Generic key/value store for syncing client state |
-| `chats` | Chat sessions with mode, language, difficulty, scenario settings |
+| `chats` | Chat sessions with mode, language, difficulty, scenario settings, and the conversation context summary |
 | `chat_messages` | Individual messages (sender, text, HTML) per chat |
 | `flashcards` | Vocabulary cards with known/unknown status and review count |
 

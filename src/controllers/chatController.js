@@ -24,25 +24,25 @@ module.exports = {
   },
 
   async createChat(req, res) {
-    const { title, mode, language, difficulty, scenario, autoReadEnabled } = req.body;
+    const { title, mode, language, difficulty, scenario, autoReadEnabled, contextSummary } = req.body;
 
     const result = await db.query(
-      `INSERT INTO chats (user_id, title, mode, language, difficulty, scenario, auto_read_enabled)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)
+      `INSERT INTO chats (user_id, title, mode, language, difficulty, scenario, auto_read_enabled, context_summary)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
        RETURNING *`,
-      [req.userId, title, mode, language, difficulty, scenario, autoReadEnabled]
+      [req.userId, title, mode, language, difficulty, scenario, autoReadEnabled, contextSummary || ""]
     );
 
     res.json(result.rows[0]);
   },
 
   async updateChat(req, res) {
-    const { title, mode, language, difficulty, scenario, autoReadEnabled } = req.body;
+    const { title, mode, language, difficulty, scenario, autoReadEnabled, contextSummary } = req.body;
 
     await db.query(
-      `UPDATE chats SET title=$1, mode=$2, language=$3, difficulty=$4, scenario=$5, auto_read_enabled=$6, updated_at=NOW()
-       WHERE id=$7 AND user_id=$8`,
-      [title, mode, language, difficulty, scenario, autoReadEnabled, req.params.id, req.userId]
+      `UPDATE chats SET title=$1, mode=$2, language=$3, difficulty=$4, scenario=$5, auto_read_enabled=$6, context_summary=$7, updated_at=NOW()
+       WHERE id=$8 AND user_id=$9`,
+      [title, mode, language, difficulty, scenario, autoReadEnabled, contextSummary || "", req.params.id, req.userId]
     );
 
     res.json({ success: true });

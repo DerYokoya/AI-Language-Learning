@@ -130,7 +130,7 @@ async function query(text, params = []) {
   }
 
   if (q.startsWith("INSERT INTO chats")) {
-    const [user_id, title, mode, language, difficulty, scenario, auto_read_enabled] = params;
+    const [user_id, title, mode, language, difficulty, scenario, auto_read_enabled, context_summary] = params;
     const now = new Date().toISOString();
     const chat = {
       id: state.nextChatId++,
@@ -141,6 +141,7 @@ async function query(text, params = []) {
       difficulty,
       scenario: scenario ?? null,
       auto_read_enabled: auto_read_enabled ?? null,
+      context_summary: context_summary ?? "",
       created_at: now,
       updated_at: now,
     };
@@ -149,10 +150,10 @@ async function query(text, params = []) {
   }
 
   if (q.includes("UPDATE chats SET title=$1")) {
-    const [title, mode, language, difficulty, scenario, auto_read_enabled, id, user_id] = params;
+    const [title, mode, language, difficulty, scenario, auto_read_enabled, context_summary, id, user_id] = params;
     const chat = state.chats.find(c => String(c.id) === String(id) && c.user_id === user_id);
     if (chat) {
-      Object.assign(chat, { title, mode, language, difficulty, scenario, auto_read_enabled, updated_at: new Date().toISOString() });
+      Object.assign(chat, { title, mode, language, difficulty, scenario, auto_read_enabled, context_summary, updated_at: new Date().toISOString() });
     }
     return { rows: [] };
   }

@@ -4,5 +4,6 @@ const aiController = require("../controllers/aiController");
 
 router.post("/ask", aiController.ask);
 router.post("/stream", aiController.stream);
+router.post("/summarize", aiController.summarize);
 
 module.exports = router;

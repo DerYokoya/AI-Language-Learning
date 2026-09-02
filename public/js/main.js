@@ -7,6 +7,8 @@ import {
   getCurrentMode,
   getCurrentScenario,
   setCurrentScenario,
+  getConversationSummary,
+  setConversationSummary,
   loadChatHistory,
   speak,
 } from "./chat.js";
@@ -37,6 +39,7 @@ async function apiCreateChat(chat) {
       difficulty: chat.difficulty,
       scenario: chat.scenario,
       autoReadEnabled: chat.autoReadEnabled,
+      contextSummary: chat.contextSummary,
     }),
   });
   if (!res.ok) throw new Error("Failed to create chat");
@@ -168,6 +171,7 @@ export function saveCurrentChat() {
   currentChat.mode = getCurrentMode();
   currentChat.scenario = getCurrentScenario();
   currentChat.autoReadEnabled = autoReadEnabled;
+  currentChat.contextSummary = getConversationSummary();
 
   const chatMessages = [];
   const messageElements = document.querySelectorAll(".message");
@@ -235,6 +239,7 @@ export async function loadChatSession(chatId) {
     roleplaySelect.value = currentChat.scenario;
 
   setCurrentScenario(currentChat.scenario || "restaurant");
+  setConversationSummary(currentChat.contextSummary || "");
   setMode(currentChat.mode || "conversation", true);
 
   autoReadEnabled = currentChat.autoReadEnabled !== false;
@@ -281,6 +286,7 @@ async function createNewChat() {
     difficulty: "Beginner",
     scenario: "restaurant",
     autoReadEnabled: true,
+    contextSummary: "",
     flashcards: {},
   };
 
@@ -337,6 +343,7 @@ async function initializeChatSessions() {
         difficulty: row.difficulty || "Beginner",
         scenario: row.scenario || "restaurant",
         autoReadEnabled: row.auto_read_enabled !== false,
+        contextSummary: row.context_summary || "",
         createdAt: row.created_at,
         updatedAt: row.updated_at,
         history: [], // messages loaded lazily in loadChatSession

@@ -44,9 +44,11 @@ CREATE TABLE IF NOT EXISTS chats (
   difficulty        TEXT NOT NULL DEFAULT 'Beginner',
   scenario          TEXT          DEFAULT 'restaurant',
   auto_read_enabled BOOLEAN       DEFAULT TRUE,
+  context_summary   TEXT          DEFAULT '',
   created_at        TIMESTAMPTZ   DEFAULT NOW(),
   updated_at        TIMESTAMPTZ   DEFAULT NOW()
 );
+ALTER TABLE chats ADD COLUMN IF NOT EXISTS context_summary TEXT DEFAULT '';
 CREATE INDEX IF NOT EXISTS idx_chats_user ON chats(user_id);
 
 CREATE TABLE IF NOT EXISTS chat_messages (

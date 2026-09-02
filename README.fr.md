@@ -90,6 +90,11 @@ L'API est protégée contre les abus grâce à une limitation du débit par rout
 - **`/api/ai/ask`** — les visiteurs sont limités à 10 requêtes par minute (en fonction de l'adresse IP) ; les utilisateurs authentifiés ont droit à 30 requêtes par minute (en fonction de l'identifiant utilisateur). Tout dépassement de cette limite entraîne le renvoi d’une réponse `429` accompagnée d’un message convivial dans l’interface utilisateur.
 - **`/api/auth`** — tous les points de terminaison d’authentification (connexion, inscription, actualisation) sont limités à 20 requêtes toutes les 15 minutes par adresse IP, ce qui permet de se prémunir contre les attaques par force brute.
 
+### Gestion du contexte du LLM
+Les réponses normales du tuteur sont transmises de manière incrémentielle via **`POST /api/ai/stream`**. Afin de maintenir les prompts dans la fenêtre de contexte du modèle, chaque requête inclut les six derniers messages de la conversation ainsi qu’un résumé concis, généré par le LLM, des échanges antérieurs. Ce résumé conserve les objectifs d’apprentissage, les corrections, le vocabulaire, les préférences et les sujets en suspens, et est mis à jour au fur et à mesure que la conversation progresse.
+
+Les sessions de chat authentifiées conservent ce résumé dans PostgreSQL (`chats.context_summary`). Les invités le conservent dans `localStorage`. Les activités structurées telles que les exercices de compléments, les fiches de révision et les exercices d’écoute continuent d’utiliser le point de terminaison non diffusé en continu `/api/ai/ask`.
+
 ---
 
 ## Architecture du système
