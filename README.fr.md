@@ -377,6 +377,16 @@ ai-language-learning/
    http://localhost:3000
    ```
 
+### Configuration automatisée avec Bash
+
+Depuis la racine du dépôt, après avoir créé et configuré `.env`, vous pouvez exécuter :
+
+```sh
+bash scripts/setup.sh
+```
+
+Cette commande applique la migration de la base de données, renouvelle `JWT_SECRET` et installe les dépendances npm. Elle nécessite Bash, Node.js, la commande `psql` de PostgreSQL et une variable `DATABASE_URL` valide dans `.env`. Exécutez-la depuis la racine du dépôt et évitez de la relancer sans raison : le renouvellement de `JWT_SECRET` invalide les jetons d'accès existants. Si `JWT_REFRESH_SECRET` est défini séparément, renouvelez-le également.
+
 ### Exécuter les tests
 
 Le projet inclut une suite de tests Jest complète couvrant les contrôleurs, les middlewares et les utilitaires. Consultez la section [Tests](#tests) pour les détails et la liste complète des fichiers.

@@ -380,6 +380,16 @@ ai-language-learning/
    http://localhost:3000
    ```
 
+### Automated Bash Setup
+
+From the repository root, after creating and configuring `.env`, you can run:
+
+```sh
+bash scripts/setup.sh
+```
+
+This runs the database migration, rotates `JWT_SECRET`, and installs the npm dependencies. It requires Bash, Node.js, PostgreSQL's `psql` command, and a valid `DATABASE_URL` in `.env`. Run it from the repository root, and do not rerun it casually: rotating `JWT_SECRET` invalidates existing access tokens. If `JWT_REFRESH_SECRET` is set separately, rotate it separately as well.
+
 ### Running Tests
 
 The project includes a full Jest test suite covering controllers, middleware, and utilities. See the [Testing](#testing) section for details and the full file breakdown.
