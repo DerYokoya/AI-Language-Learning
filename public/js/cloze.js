@@ -52,53 +52,72 @@ async function fetchClozeExercise(targetLanguage, difficulty) {
   const context = buildConversationContext();
   const prompt = buildPrompt(targetLanguage, difficulty, context);
 
-  const response = await fetch("/api/ai/ask", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      prompt,
-      targetLanguage,
-      difficulty,
-      mode: "cloze",
-    }),
-  });
+  const maxAttempts = 2;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const retryInstruction =
+        attempt === 0
+          ? ""
+          : "\n\nThis is a retry because the previous response was invalid. Return exactly the required JSON array and nothing else.";
+      const response = await fetch("/api/ai/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: prompt + retryInstruction,
+          targetLanguage,
+          difficulty,
+          mode: "cloze",
+        }),
+      });
 
-  if (response.status === 429) throw new Error("rate_limited");
-  if (!response.ok) throw new Error(`API error: ${response.status}`);
-  const data = await response.json();
-  const raw = (data.reply || "").trim();
+      if (response.status === 429) throw new Error("rate_limited");
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      const data = await response.json();
+      const raw = (data.reply || "").trim();
 
-  // Strip markdown code fences if present, then extract the JSON array
-  // (handles preamble text like "User Safety: safe" before the array)
-  const fenceStripped = raw
-    .replace(/^```[a-z]*\n?/i, "")
-    .replace(/```$/, "")
-    .trim();
-  const start = fenceStripped.indexOf("[");
-  const end = fenceStripped.lastIndexOf("]");
-  if (start === -1 || end === -1)
-    throw new Error("No JSON array found in response");
-  const clean = fenceStripped.slice(start, end + 1);
-  const items = JSON.parse(clean);
+      // Strip markdown code fences if present, then extract the JSON array
+      // (handles preamble text like "User Safety: safe" before the array)
+      const fenceStripped = raw
+        .replace(/^```[a-z]*\n?/i, "")
+        .replace(/```$/, "")
+        .trim();
+      const start = fenceStripped.indexOf("[");
+      const end = fenceStripped.lastIndexOf("]");
+      if (start === -1 || end === -1)
+        throw new Error("No JSON array found in response");
+      const clean = fenceStripped.slice(start, end + 1);
+      const items = JSON.parse(clean);
 
-  // Validate each item: answer must be present in options (case-insensitive match)
-  return items
-    .filter((item) => {
-      if (!item.sentence || !Array.isArray(item.options) || !item.answer) return false;
-      if (!item.sentence.includes("___")) return false;
-      const answerLower = item.answer.trim().toLowerCase();
-      const matchedOption = item.options.find(
-        (opt) => opt.trim().toLowerCase() === answerLower
-      );
-      if (!matchedOption) {
-        console.warn("Cloze item dropped — answer not in options:", item);
-        return false;
+      // Validate each item: answer must be present in options (case-insensitive match)
+      const validItems = items
+        .filter((item) => {
+          if (!item.sentence || !Array.isArray(item.options) || !item.answer) return false;
+          if (!item.sentence.includes("___")) return false;
+          const answerLower = item.answer.trim().toLowerCase();
+          const matchedOption = item.options.find(
+            (opt) => typeof opt === "string" && opt.trim().toLowerCase() === answerLower
+          );
+          if (!matchedOption) {
+            console.warn("Cloze item dropped — answer not in options:", item);
+            return false;
+          }
+          // Normalise answer to exact casing from options array
+          item.answer = matchedOption;
+          return true;
+        })
+        .slice(0, 4);
+
+      if (!validItems.length) throw new Error("No valid cloze items found");
+      return validItems;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (errorMessage === "rate_limited" || errorMessage.startsWith("API error:")) {
+        throw err;
       }
-      // Normalise answer to exact casing from options array
-      item.answer = matchedOption;
-      return true;
-    })
-    .slice(0, 4);
+      if (attempt === maxAttempts - 1) throw err;
+      console.warn("Invalid cloze response; retrying once:", err);
+    }
+  }
 }
 
 // ── Overlay UI ────────────────────────────────────────────────────────────────
