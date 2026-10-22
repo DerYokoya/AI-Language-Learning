@@ -20,7 +20,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
     "jsonwebtoken": "^9.0.3",
-    "openai": "^4.0.0",
+    "openai": "^7.39.0",
     "pg": "^8.20.0"
   },
   "devDependencies": {
