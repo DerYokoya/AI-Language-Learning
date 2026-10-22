@@ -324,7 +324,7 @@ ai-language-learning/
 ## Getting Started
 
 ### Prerequisites
-- **Node.js** v18+ and **npm**
+- **Node.js** v22+ and **npm**
 - A **PostgreSQL** database (local or hosted)
 - An **OpenRouter API key** — [get one here](https://openrouter.ai/keys)
 
@@ -446,7 +446,7 @@ Or use the convenience scripts in [`automatic_tests/`](./automatic_tests):
 
 ## Continuous Integration
 
-Every push and pull request runs through [GitHub Actions](.github/workflows/ci.yml) across a Node **18 / 20 / 22** matrix:
+Every push and pull request runs through [GitHub Actions](.github/workflows/ci.yml) across a Node **22 / 24** matrix:
 
 | Step | What it does |
 |---|---|
