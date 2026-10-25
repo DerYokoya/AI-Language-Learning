@@ -22,6 +22,8 @@ let currentScenario = "restaurant";
 let isRecording = false;
 let conversationSummary = "";
 const RECENT_CONTEXT_MESSAGES = 6;
+const VALID_MODES = new Set(["conversation", "grammar", "vocabulary", "roleplay"]);
+const MAX_SUMMARY_LENGTH = 10_000;
 
 const roleplayScenarios = {
   restaurant: "restaurant (ordering food, asking about menu, paying bill)",
@@ -42,7 +44,7 @@ export function getCurrentMode() {
 }
 
 export function setCurrentMode(mode) {
-  currentMode = mode;
+  currentMode = VALID_MODES.has(mode) ? mode : "conversation";
 }
 
 export function getCurrentScenario() {
@@ -58,7 +60,9 @@ export function getConversationSummary() {
 }
 
 export function setConversationSummary(summary) {
-  conversationSummary = summary || "";
+  conversationSummary = typeof summary === "string"
+    ? summary.slice(0, MAX_SUMMARY_LENGTH)
+    : "";
 }
 
 // Mode-specific prompt builder
@@ -244,7 +248,7 @@ export function addMessage(text, sender) {
     msg.classList.add("message", "system-success");
   else msg.classList.add("message", "ai");
 
-  msg.innerHTML = marked.parse(text);
+  msg.replaceChildren(renderMarkdown(text));
   chatWindow.appendChild(msg);
   // Smooth auto-scroll to bottom when new messages arrive
   chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: "smooth" });
@@ -265,8 +269,72 @@ function createStreamingMessage() {
 }
 
 function updateStreamingMessage(msg, text) {
-  msg.innerHTML = marked.parse(text);
+  msg.replaceChildren(renderMarkdown(text));
   chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: "auto" });
+}
+
+function renderMarkdown(text) {
+  const template = document.createElement("template");
+  template.innerHTML = marked.parse(String(text));
+
+  template.content.querySelectorAll("script, style, iframe, object, embed").forEach((element) => {
+    element.remove();
+  });
+  template.content.querySelectorAll("*").forEach((element) => {
+    [...element.attributes].forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      if (name.startsWith("on") || name === "style" || name === "srcdoc") {
+        element.removeAttribute(attribute.name);
+      }
+    });
+
+    ["href", "src"].forEach((attributeName) => {
+      const value = element.getAttribute(attributeName);
+      if (!value) return;
+      try {
+        const protocol = new URL(value, window.location.href).protocol;
+        if (!["http:", "https:", "mailto:", "tel:"].includes(protocol)) {
+          element.removeAttribute(attributeName);
+        }
+      } catch {
+        element.removeAttribute(attributeName);
+      }
+    });
+  });
+
+  return template.content;
+}
+
+function sanitizeHtml(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+
+  template.content.querySelectorAll("script, style, iframe, object, embed").forEach((element) => {
+    element.remove();
+  });
+  template.content.querySelectorAll("*").forEach((element) => {
+    [...element.attributes].forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      if (name.startsWith("on") || name === "style" || name === "srcdoc") {
+        element.removeAttribute(attribute.name);
+      }
+    });
+
+    ["href", "src"].forEach((attributeName) => {
+      const value = element.getAttribute(attributeName);
+      if (!value) return;
+      try {
+        const protocol = new URL(value, window.location.href).protocol;
+        if (!["http:", "https:", "mailto:", "tel:"].includes(protocol)) {
+          element.removeAttribute(attributeName);
+        }
+      } catch {
+        element.removeAttribute(attributeName);
+      }
+    });
+  });
+
+  return template.content;
 }
 
 export function loadChatHistory(history = null) {
@@ -286,7 +354,9 @@ export function loadChatHistory(history = null) {
   messages.forEach((m) => {
     const msg = document.createElement("div");
     msg.classList.add("message", m.sender);
-    msg.innerHTML = m.html || marked.parse(m.text || "");
+    msg.replaceChildren(
+      m.html ? sanitizeHtml(m.html) : renderMarkdown(m.text || ""),
+    );
     chatWindow.appendChild(msg);
 
     if (m.sender === "user" || m.sender === "ai") {
@@ -439,7 +509,7 @@ async function refreshConversationSummary() {
     if (!response.ok) return;
     const data = await response.json();
     if (data.summary) {
-      conversationSummary = data.summary;
+      setConversationSummary(data.summary);
       saveCurrentChat();
     }
   } catch (error) {

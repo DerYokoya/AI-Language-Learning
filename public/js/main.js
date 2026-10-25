@@ -535,6 +535,7 @@ export async function generateRoleplayIntro(
 // Mode switching
 export function setMode(mode, suppressMessage = false) {
   setCurrentMode(mode);
+  mode = getCurrentMode();
 
   // Update button styles
   Object.keys(modeButtons).forEach((key) => {
