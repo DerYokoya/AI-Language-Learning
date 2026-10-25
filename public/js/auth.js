@@ -97,11 +97,17 @@ function updateNav() {
   const navEl = document.getElementById("auth-nav");
   if (!navEl) return;
   if (window.currentUser) {
-    navEl.innerHTML = `
-      <span class="auth-user-name">${escHtml(window.currentUser.displayName || window.currentUser.email)}</span>
-      <button id="logout-btn" class="auth-btn auth-btn-ghost">Sign out</button>
-    `;
-    document.getElementById("logout-btn").addEventListener("click", logout);
+    const userName = document.createElement("span");
+    userName.className = "auth-user-name";
+    userName.textContent = window.currentUser.displayName || window.currentUser.email;
+
+    const logoutButton = document.createElement("button");
+    logoutButton.id = "logout-btn";
+    logoutButton.className = "auth-btn auth-btn-ghost";
+    logoutButton.textContent = "Sign out";
+    logoutButton.addEventListener("click", logout);
+
+    navEl.replaceChildren(userName, logoutButton);
   } else {
     navEl.innerHTML = `
       <button id="nav-login-btn"  class="auth-btn auth-btn-ghost">Log in</button>
@@ -275,13 +281,6 @@ async function handleSignup(e) {
   } finally {
     setFormLoading(form, false);
   }
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function escHtml(str) {
-  return String(str).replace(/[&<>"']/g, c =>
-    ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])
-  );
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
