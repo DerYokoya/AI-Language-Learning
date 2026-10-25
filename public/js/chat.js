@@ -275,7 +275,8 @@ function updateStreamingMessage(msg, text) {
 
 function renderMarkdown(text) {
   const template = document.createElement("template");
-  template.innerHTML = marked.parse(String(text));
+  const safeHtml = DOMPurify.sanitize(marked.parse(String(text)));
+  template.innerHTML = safeHtml;
 
   template.content.querySelectorAll("script, style, iframe, object, embed").forEach((element) => {
     element.remove();
@@ -307,7 +308,7 @@ function renderMarkdown(text) {
 
 function sanitizeHtml(html) {
   const template = document.createElement("template");
-  template.innerHTML = html;
+  template.innerHTML = DOMPurify.sanitize(html);
 
   template.content.querySelectorAll("script, style, iframe, object, embed").forEach((element) => {
     element.remove();

@@ -157,24 +157,43 @@ function renderClozeOverlay(items, targetLanguage, difficulty) {
     div.dataset.answer = item.answer;
     div.dataset.idx = idx;
 
-    // Render sentence with blank highlighted
-    const sentenceHtml = item.sentence.replace(
-      "___",
-      `<span class="cloze-blank" data-idx="${idx}">___</span>`,
-    );
+    const sentenceP = document.createElement("p");
+    sentenceP.className = "cloze-sentence";
+    const parts = String(item.sentence).split("___");
+    parts.forEach((part, i) => {
+      sentenceP.appendChild(document.createTextNode(part));
+      if (i < parts.length - 1) {
+        const blankSpan = document.createElement("span");
+        blankSpan.className = "cloze-blank";
+        blankSpan.dataset.idx = idx;
+        blankSpan.textContent = "___";
+        sentenceP.appendChild(blankSpan);
+      }
+    });
+    div.appendChild(sentenceP);
 
-    div.innerHTML = `
-      <p class="cloze-sentence">${sentenceHtml}</p>
-      <div class="cloze-options">
-        ${item.options
-          .map(
-            (opt) =>
-              `<button class="cloze-option" data-value="${opt}">${opt}</button>`,
-          )
-          .join("")}
-      </div>
-      ${item.hint ? `<p class="cloze-hint">💡 ${item.hint}</p>` : ""}
-      <p class="cloze-feedback" style="display:none"></p>`;
+    const optionsDiv = document.createElement("div");
+    optionsDiv.className = "cloze-options";
+    item.options.forEach((opt) => {
+      const btn = document.createElement("button");
+      btn.className = "cloze-option";
+      btn.dataset.value = String(opt);
+      btn.textContent = String(opt);
+      optionsDiv.appendChild(btn);
+    });
+    div.appendChild(optionsDiv);
+
+    if (item.hint) {
+      const hintP = document.createElement("p");
+      hintP.className = "cloze-hint";
+      hintP.textContent = `💡 ${item.hint}`;
+      div.appendChild(hintP);
+    }
+
+    const feedbackP = document.createElement("p");
+    feedbackP.className = "cloze-feedback";
+    feedbackP.style.display = "none";
+    div.appendChild(feedbackP);
 
     // Option click — select
     div.querySelectorAll(".cloze-option").forEach((btn) => {

@@ -1,5 +1,6 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const csrf = require("csurf");
 const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 require("dotenv").config();
 
@@ -24,6 +25,11 @@ app.set("trust proxy", 1);
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(csrf({ cookie: true }));
+app.use((req, res, next) => {
+  res.cookie("XSRF-TOKEN", req.csrfToken());
+  next();
+});
 app.use(csrfProtection);
 
 // Rate limiter for AI endpoint — guests get 10/min, logged-in users get 30/min

@@ -221,7 +221,7 @@ function startFlashcardMode(cards, newlyAdded = 0) {
         <div id="fc-stats" style="font-size:13px; color:${t.subtext};"></div>
       </div>
 
-      ${newlyAdded > 0 ? `<div id="fc-new-badge" style="font-size:12px; color:#7b8ef8; margin-bottom:8px; font-weight:600;">+${newlyAdded} new card${newlyAdded > 1 ? 's' : ''} added to your deck!</div>` : ""}
+      <div id="fc-new-badge" style="font-size:12px; color:#7b8ef8; margin-bottom:8px; font-weight:600; display:none;"></div>
 
       <div style="background:${t.progressBg}; border-radius:999px; height:6px; margin-bottom:16px; overflow:hidden;">
         <div id="fc-progress-bar" style="height:100%; background: linear-gradient(90deg, #5b6af0, #8b9cf8); border-radius:999px; transition: width 0.3s;"></div>
@@ -270,6 +270,13 @@ function startFlashcardMode(cards, newlyAdded = 0) {
 
   document.body.appendChild(overlay);
   currentFlashcardOverlay = overlay;
+
+  if (newlyAdded > 0) {
+    const badgeEl = document.getElementById("fc-new-badge");
+    const safeCount = Number(newlyAdded) | 0;
+    badgeEl.textContent = `+${safeCount} new card${safeCount > 1 ? 's' : ''} added to your deck!`;
+    badgeEl.style.display = "block";
+  }
 
   async function getViewCards() {
     const all = (await loadSavedCards()).filter(
