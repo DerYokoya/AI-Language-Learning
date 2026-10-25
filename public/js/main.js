@@ -63,18 +63,35 @@ async function apiUpdateChat(chat) {
 }
 
 async function apiAddMessage(chatId, { sender, text, html }) {
-  await fetch(`/api/chats/${chatId}/messages`, {
+  const res = await fetch(`/api/chats/${chatId}/messages`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ sender, text, html }),
   });
+  if (!res.ok) throw new Error(`Failed to save message (${res.status})`);
 }
 
 async function apiGetChat(chatId) {
   const res = await fetch(`/api/chats/${chatId}`, { credentials: "include" });
   if (!res.ok) throw new Error("Failed to load chat");
   return res.json(); // { …chatRow, messages: [...] }
+}
+
+async function migrateGuestChatsToServer(chats) {
+  for (const guestChat of chats) {
+    const serverChat = await apiCreateChat(guestChat);
+    const messages = Array.isArray(guestChat.history) ? guestChat.history : [];
+
+    for (const message of messages) {
+      if (message.sender !== "user" && message.sender !== "ai") continue;
+      await apiAddMessage(serverChat.id, {
+        sender: message.sender,
+        text: message.text,
+        html: message.html,
+      });
+    }
+  }
 }
 
 async function apiDeleteChat(chatId) {
@@ -838,7 +855,12 @@ document.addEventListener(
       // Discard any guest IDs before touching the server.
       storage.removeItem("currentChatId");
       if (wasGuest) {
-        // Don't carry guest chats over — clear local cache entirely.
+        const guestChats = loadChatSessionsLocal();
+        try {
+          await migrateGuestChatsToServer(guestChats);
+        } catch (error) {
+          console.error("Failed to migrate guest chats to the server:", error);
+        }
         storage.removeItem("chatSessions");
       }
       resetChatState();
