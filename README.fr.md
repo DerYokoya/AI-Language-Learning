@@ -71,6 +71,7 @@ Exercices de complétion générés par l'IA. Chaque question présente une phra
 - Inscription et connexion sécurisées grâce à des mots de passe hachés avec **bcrypt**.
 - Jetons d'accès **basés sur JWT** (expiration après 15 minutes) avec des **jetons de rafraîchissement** rotatifs (expiration après 30 jours) stockés sous forme de cookies HttpOnly.
 - Rotation des jetons à chaque rafraîchissement et révocation explicite lors de la déconnexion.
+- Les requêtes de modification envoyées par le navigateur sont protégées par une vérification de la même origine et un jeton CSRF à double soumission (cookie `csrf_token` et en-tête `X-CSRF-Token`).
 
 ### Persistance des données dans le cloud
 Une fois connecté, toutes les sessions de chat, les messages, les fiches et les paramètres sont synchronisés vers une base de données **PostgreSQL**, afin que vos données vous suivent sur tous vos appareils.
@@ -107,6 +108,8 @@ Frontend (Vanilla JS)
 API REST (Express)
         ↓
 Middleware de limitation de débit
+        ↓
+Middleware CSRF
         ↓
 Couche de contrôleurs
         ↓
@@ -307,6 +310,7 @@ ai-language-learning/
 - **Jetons de rafraîchissement** — JWT à longue durée de vie (30 jours) stockés à la fois dans un cookie `HttpOnly` (dont l'accès est limité au chemin `/api/auth`, afin qu'il soit envoyé à chaque point de terminaison d'authentification, y compris la déconnexion) et dans la base de données en vue de leur révocation.
 - **Rotation des jetons** — chaque appel de rafraîchissement supprime l'ancien jeton et émet une nouvelle paire, empêchant ainsi les attaques par rejeu.
 - **Déconnexion** — supprime explicitement le jeton d'actualisation de la base de données et efface les deux cookies.
+- **Protection CSRF** — les requêtes de modification envoyées par un navigateur (`POST`, `PUT`, `PATCH` et `DELETE`) doivent provenir de la même origine et inclure dans l'en-tête `X-CSRF-Token` le jeton du cookie non HttpOnly `csrf_token`. Les requêtes sûres (`GET`, `HEAD` et `OPTIONS`) n'ont pas besoin de jeton. Les requêtes sans en-tête `Origin` ou `Referer` restent compatibles avec les clients non navigateurs, comme la suite de tests.
 
 ---
 
@@ -335,8 +339,10 @@ ai-language-learning/
 
 2. **Installez les dépendances**
    ```sh
-   npm install
+   npm ci
    ```
+
+   Utilisez `npm install` uniquement lorsque vous modifiez volontairement les dépendances ; validez le fichier `package-lock.json` généré avec toute modification du manifeste.
 
 3. **Configurez la base de données**
 
