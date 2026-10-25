@@ -352,7 +352,7 @@ ai-language-learning/
    psql -U <votre_utilisateur> -d <votre_base_de_données> -f src/db/schema.sql
    ```
 
-   Si vous utilisez déjà une base de données créée avec une version antérieure, exécutez à nouveau cette commande après avoir récupéré des modifications du schéma. Elle est conçue pour ajouter les colonnes manquantes sans supprimer les données de chat existantes.
+Si votre base de données a été créée avec une version antérieure du projet, relancez la migration du schéma après avoir récupéré les mises à jour relatives à la base de données. La migration ajoute les colonnes manquantes sans supprimer les données de chat existantes.
 
 4. **Configurer les variables d'environnement**
 

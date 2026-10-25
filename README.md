@@ -353,7 +353,7 @@ ai-language-learning/
    psql -U <your_user> -d <your_database> -f src/db/schema.sql
    ```
 
-   If you already have a database from an earlier version, run this command again after pulling schema changes. It is designed to add missing columns without removing existing chat data.
+If your database was created with an earlier version of the project, rerun the schema migration after pulling database-related updates. The migration adds missing columns without deleting existing chat data.
 
 4. **Configure environment variables**
 
