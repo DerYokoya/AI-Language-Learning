@@ -401,6 +401,7 @@ export async function sendMessage() {
   try {
     const response = await fetch("/api/ai/stream", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         prompt: prompt,
@@ -420,7 +421,11 @@ export async function sendMessage() {
 
     if (!response.ok) {
       hideTyping();
-      addMessage("⚠️ Server error. Please try again.", "ai");
+      const errorBody = await response.json().catch(() => ({}));
+      const errorMessage = response.status === 403
+        ? "Your security token expired. Please refresh the page and try again."
+        : errorBody.error || "Server error. Please try again.";
+      addMessage(`⚠️ ${errorMessage}`, "ai");
       return;
     }
 
@@ -504,6 +509,7 @@ async function refreshConversationSummary() {
   try {
     const response = await fetch("/api/ai/summarize", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ summary: conversationSummary, messages: summaryBatch }),
     });
