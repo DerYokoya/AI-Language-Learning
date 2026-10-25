@@ -353,6 +353,8 @@ ai-language-learning/
    psql -U <your_user> -d <your_database> -f src/db/schema.sql
    ```
 
+   If you already have a database from an earlier version, run this command again after pulling schema changes. It is designed to add missing columns without removing existing chat data.
+
 4. **Configure environment variables**
 
    Copy the example file and fill in your own values:

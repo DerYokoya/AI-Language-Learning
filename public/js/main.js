@@ -856,12 +856,14 @@ document.addEventListener(
       storage.removeItem("currentChatId");
       if (wasGuest) {
         const guestChats = loadChatSessionsLocal();
+        let migrationSucceeded = true;
         try {
           await migrateGuestChatsToServer(guestChats);
         } catch (error) {
+          migrationSucceeded = false;
           console.error("Failed to migrate guest chats to the server:", error);
         }
-        storage.removeItem("chatSessions");
+        if (migrationSucceeded) storage.removeItem("chatSessions");
       }
       resetChatState();
       await initializeChatSessions();

@@ -352,6 +352,8 @@ ai-language-learning/
    psql -U <votre_utilisateur> -d <votre_base_de_données> -f src/db/schema.sql
    ```
 
+   Si vous utilisez déjà une base de données créée avec une version antérieure, exécutez à nouveau cette commande après avoir récupéré des modifications du schéma. Elle est conçue pour ajouter les colonnes manquantes sans supprimer les données de chat existantes.
+
 4. **Configurer les variables d'environnement**
 
    Copiez le fichier d'exemple et remplacez-le par vos propres valeurs :
