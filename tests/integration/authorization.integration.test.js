@@ -35,7 +35,7 @@ describe("requireAuth wiring across protected routers", () => {
     const expired = jwt.sign({ id: 1 }, "test-secret-key", { expiresIn: -1 });
     const res = await request(app).get("/api/chats").set("Cookie", `token=${expired}`);
     expect(res.status).toBe(401);
-    expect(res.body).toEqual({ error: "Token expired" });
+    expect(res.body).toEqual({ error: "Token expired", code: "TOKEN_EXPIRED" });
   });
 });
 

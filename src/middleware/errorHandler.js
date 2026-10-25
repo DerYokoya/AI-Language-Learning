@@ -1,7 +1,9 @@
 module.exports = function errorHandler(err, req, res, next) {
   // Operational errors (AppError) — expected, safe to expose message
   if (err.isOperational) {
-    return res.status(err.statusCode).json({ error: err.message });
+    const response = { error: err.message };
+    if (err.code) response.code = err.code;
+    return res.status(err.statusCode).json(response);
   }
 
   // Unexpected bugs — log fully, hide internals from client

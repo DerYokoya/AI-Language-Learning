@@ -16,7 +16,9 @@ module.exports = function requireAuth(req, res, next) {
     next();
   } catch (err) {
     if (err.name === "TokenExpiredError") {
-      return next(new AppError("Token expired", 401));
+      const tokenExpired = new AppError("Token expired", 401);
+      tokenExpired.code = "TOKEN_EXPIRED";
+      return next(tokenExpired);
     }
     return next(new AppError("Invalid token", 401));
   }

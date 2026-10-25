@@ -61,7 +61,20 @@ async function fetchCurrentUser() {
       setCurrentUser(data.user);
       scheduleRefresh();
     } else {
-      setCurrentUser(null);
+      // The access token may have expired while the page was asleep or closed.
+      // /me intentionally returns an anonymous response for an expired token,
+      // so use the refresh cookie before treating the user as logged out.
+      const refreshed = await fetch("/api/auth/refresh", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (refreshed.ok) {
+        const refreshedUser = await refreshed.json();
+        setCurrentUser(refreshedUser);
+        scheduleRefresh();
+      } else {
+        setCurrentUser(null);
+      }
     }
   } catch {
     setCurrentUser(null);

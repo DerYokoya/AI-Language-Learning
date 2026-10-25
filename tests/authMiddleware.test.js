@@ -54,6 +54,7 @@ describe("requireAuth middleware", () => {
     const err = next.mock.calls[0][0];
     expect(err.statusCode).toBe(401);
     expect(err.message).toBe("Token expired");
+    expect(err.code).toBe("TOKEN_EXPIRED");
   });
 
   it("calls next(err) with 401 for a malformed/tampered token", () => {
