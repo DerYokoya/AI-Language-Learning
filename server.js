@@ -10,9 +10,12 @@ const chatRoutes = require("./src/routes/chats");
 const flashcardRoutes = require("./src/routes/flashcards");
 const storageRoutes = require("./src/routes/storage");
 const errorHandler = require("./src/middleware/errorHandler");
+const csrfProtection = require("./src/middleware/csrf");
 const jwt = require("./src/utils/jwt");
 
 const app = express();
+
+app.disable("x-powered-by");
 
 // Render (and most PaaS hosts) sit behind a reverse proxy, so requests
 // arrive with X-Forwarded-For set. Trust exactly 1 hop so Express/
@@ -21,6 +24,7 @@ app.set("trust proxy", 1);
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(csrfProtection);
 
 // Rate limiter for AI endpoint — guests get 10/min, logged-in users get 30/min
 const aiLimiter = rateLimit({

@@ -72,17 +72,26 @@ async function fetchCurrentUser() {
 
 // ─── Intercept 401 responses globally ────────────────────────────────────────
 const _origFetch = window.fetch.bind(window);
+function csrfFetch(input, init = {}) {
+  const headers = new Headers(init.headers);
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+  if (match && !["GET", "HEAD", "OPTIONS"].includes((init.method || "GET").toUpperCase())) {
+    headers.set("X-CSRF-Token", decodeURIComponent(match[1]));
+  }
+  return _origFetch(input, { ...init, headers });
+}
+
 window.fetch = async function patchedFetch(input, init) {
-  const res = await _origFetch(input, init);
+  const res = await csrfFetch(input, init);
   if (res.status === 401) {
     let body;
     try { body = await res.clone().json(); } catch { body = {}; }
     if (body.code === "TOKEN_EXPIRED") {
       // Try to refresh once and retry
-      const refreshed = await _origFetch("/api/auth/refresh", { method: "POST", credentials: "include" });
+      const refreshed = await csrfFetch("/api/auth/refresh", { method: "POST", credentials: "include" });
       if (refreshed.ok) {
         scheduleRefresh();
-        return _origFetch(input, init); // retry original
+        return csrfFetch(input, init); // retry original
       } else {
         setCurrentUser(null);
         showAuthModal("login");
