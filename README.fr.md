@@ -254,6 +254,7 @@ ai-language-learning/
 │   │   └── schema.sql            # Schéma complet de la base de données
 │   ├── middleware/
 │   │   ├── authMiddleware.js     # Middleware de vérification JWT
+│   │   ├── csrf.js              # Protection de la même origine et jeton CSRF
 │   │   └── errorHandler.js      # Gestionnaire centralisé des erreurs AppError
 │   ├── routes/
 │   │   ├── ai.js
