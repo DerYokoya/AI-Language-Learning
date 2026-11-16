@@ -2,13 +2,14 @@ process.env.JWT_SECRET = "test-secret-key";
 process.env.JWT_REFRESH_SECRET = "test-refresh-secret";
 process.env.OPENROUTER_API_KEY = "test-key";
 
-const fakeDb = require("./helpers/fakeDb");
-jest.mock("../../src/db/connection", () => require("./helpers/fakeDb"));
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+const realDb = require("./helpers/realDb");
 
 const request = require("supertest");
 const app = require("../../server");
 
-beforeEach(() => fakeDb.reset());
+beforeEach(() => realDb.reset());
+afterAll(() => realDb.end());
 
 async function loggedInAgent(email = "learner@example.com") {
   const agent = request.agent(app);
@@ -77,7 +78,7 @@ describe("chats CRUD lifecycle", () => {
     expect(listAfterDelete.body).toEqual([]);
 
     // Deleting the chat should cascade its messages too.
-    expect(fakeDb._state().chatMessages).toHaveLength(0);
+    expect(await realDb.count("chat_messages")).toBe(0);
   });
 
   it("bumps the chat's updated_at when a message is added, affecting list order", async () => {

@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const ACCESS_EXPIRY  = "15m";
 const REFRESH_EXPIRY = "30d";
@@ -15,7 +16,9 @@ module.exports = {
   // Used to obtain a new access token when the old one expires.
   signRefresh(payload) {
     const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET + "_refresh";
-    return jwt.sign(payload, secret, { expiresIn: REFRESH_EXPIRY });
+    // Unique jwtid so two refresh tokens issued in the same second never collide
+    // (they are stored under a UNIQUE constraint).
+    return jwt.sign(payload, secret, { expiresIn: REFRESH_EXPIRY, jwtid: crypto.randomUUID() });
   },
 
   // Future prospect: using RS256 with a public/private keypair,

@@ -2,13 +2,14 @@ process.env.JWT_SECRET = "test-secret-key";
 process.env.JWT_REFRESH_SECRET = "test-refresh-secret";
 process.env.OPENROUTER_API_KEY = "test-key";
 
-const fakeDb = require("./helpers/fakeDb");
-jest.mock("../../src/db/connection", () => require("./helpers/fakeDb"));
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+const realDb = require("./helpers/realDb");
 
 const request = require("supertest");
 const app = require("../../server");
 
-beforeEach(() => fakeDb.reset());
+beforeEach(() => realDb.reset());
+afterAll(() => realDb.end());
 
 async function loggedInAgent(email = "learner@example.com") {
   const agent = request.agent(app);
@@ -35,7 +36,7 @@ describe("users routes", () => {
     });
     expect(first.status).toBe(200);
     expect(first.body).toEqual({ success: true });
-    expect(fakeDb._state().userSettings).toHaveLength(1);
+    expect(await realDb.count("user_settings")).toBe(1);
 
     await agent.put("/api/users/settings").send({
       theme: "light",
@@ -45,7 +46,7 @@ describe("users routes", () => {
     });
 
     // Still exactly one settings row for this user — it was updated, not duplicated.
-    const rows = fakeDb._state().userSettings;
+    const rows = await realDb.rows("user_settings");
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ theme: "light", language: "German", difficulty: "Advanced", auto_read_enabled: false });
   });

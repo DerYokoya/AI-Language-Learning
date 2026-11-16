@@ -2,13 +2,14 @@ process.env.JWT_SECRET = "test-secret-key";
 process.env.JWT_REFRESH_SECRET = "test-refresh-secret";
 process.env.OPENROUTER_API_KEY = "test-key";
 
-const fakeDb = require("./helpers/fakeDb");
-jest.mock("../../src/db/connection", () => require("./helpers/fakeDb"));
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+const realDb = require("./helpers/realDb");
 
 const request = require("supertest");
 const app = require("../../server");
 
-beforeEach(() => fakeDb.reset());
+beforeEach(() => realDb.reset());
+afterAll(() => realDb.end());
 
 describe("auth flow (signup -> login -> me -> refresh -> logout)", () => {
   it("signs a new user up, sets auth cookies, and returns their profile", async () => {
@@ -92,13 +93,13 @@ describe("auth flow (signup -> login -> me -> refresh -> logout)", () => {
     expect(me.body.user.email).toBe("erin@example.com");
 
     // The old refresh token should now be revoked (single-use rotation).
-    expect(fakeDb._state().refreshTokens).toHaveLength(1);
+    expect(await realDb.count("refresh_tokens")).toBe(1);
   });
 
   it("logs out, clears cookies, and revokes the refresh token so it can't be reused", async () => {
     const agent = request.agent(app);
     await agent.post("/api/auth/signup").send({ email: "frank@example.com", password: "pw" });
-    expect(fakeDb._state().refreshTokens).toHaveLength(1);
+    expect(await realDb.count("refresh_tokens")).toBe(1);
 
     const logout = await agent.post("/api/auth/logout");
     expect(logout.status).toBe(200);
@@ -106,7 +107,7 @@ describe("auth flow (signup -> login -> me -> refresh -> logout)", () => {
 
     // refresh_token is scoped to path "/api/auth", which covers
     // /api/auth/logout too, so logout can actually read and delete it.
-    expect(fakeDb._state().refreshTokens).toHaveLength(0);
+    expect(await realDb.count("refresh_tokens")).toBe(0);
 
     const refreshAttempt = await agent.post("/api/auth/refresh");
     expect(refreshAttempt.status).toBe(401);

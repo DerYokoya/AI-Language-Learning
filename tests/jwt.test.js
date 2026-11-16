@@ -64,3 +64,11 @@ describe("jwt utility", () => {
     });
   });
 });
+
+describe("signRefresh uniqueness", () => {
+  it("issues different refresh tokens for the same user within the same second", () => {
+    process.env.JWT_SECRET = process.env.JWT_SECRET || "test-secret-key";
+    const jwtUtil = require("../src/utils/jwt");
+    expect(jwtUtil.signRefresh({ id: 1 })).not.toBe(jwtUtil.signRefresh({ id: 1 }));
+  });
+});
