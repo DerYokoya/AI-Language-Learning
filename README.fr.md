@@ -142,7 +142,7 @@ L'application repose sur un patron de gestion centralisée des erreurs :
 | **Limitation du débit** | `express-rate-limit` |
 | **Outils de développement** | Nodemon, dotenv |
 | **Tests** | Jest |
-| **CI/CD** | GitHub Actions (tests multi-versions, validation du schéma, audit des dépendances) |
+| **CI/CD** | GitHub Actions (tests multi-versions sur un vrai service PostgreSQL, audit des dépendances) |
 
 ---
 ## Référence API
@@ -277,6 +277,7 @@ ai-language-learning/
 │   ├── authMiddleware.test.js
 │   ├── hash.test.js
 │   ├── jwt.test.js
+│   ├── setupEnv.js                # Configuration Jest : charge .env.test, valide TEST_DATABASE_URL
 │   └── integration/               # Tests HTTP de bout en bout (supertest sur l'app réelle)
 │       ├── auth.integration.test.js
 │       ├── authorization.integration.test.js
@@ -289,7 +290,7 @@ ai-language-learning/
 │       ├── aiRateLimit.integration.test.js
 │       ├── errorHandling.integration.test.js
 │       └── helpers/
-│           ├── fakeDb.js          # Substitut en mémoire de la connexion Postgres
+│           ├── realDb.js          # Utilitaire Postgres réel : reset() / count() / rows() entre les tests
 │           └── fakeOpenrouter.js  # Faux client IA avec réponses/échecs contrôlables
 ├── automatic_tests/           # Scripts pratiques encapsulant la suite Jest
 │   ├── run-all-tests.sh          # Tests unitaires + d'intégration
@@ -300,7 +301,9 @@ ai-language-learning/
 ├── server.js                 # Point d'entrée de l'application Express
 ├── package.json
 ├── .env.example               # Modèle de variables d'environnement
-└── .env                       # Variables d'environnement (non validées)
+├── .env.test.example          # Modèle de variable pour la base de test
+├── .env                       # Variables d'environnement (non validées)
+└── .env.test                  # URL de la base de test (non validée)
 ```
 
 ---
@@ -398,13 +401,13 @@ Cette commande applique la migration de la base de données, renouvelle `JWT_SEC
 
 ### Exécuter les tests
 
-Le projet inclut une suite de tests Jest complète couvrant les contrôleurs, les middlewares et les utilitaires. Consultez la section [Tests](#tests) pour les détails et la liste complète des fichiers.
+Le projet inclut une suite de tests Jest complète couvrant les contrôleurs, les middlewares et les utilitaires. Les tests d'intégration nécessitent une base PostgreSQL de test distincte ; consultez la section [Tests](#tests) pour la configuration, les détails et la liste complète des fichiers.
 
 ---
 
 ## Tests
 
-Le projet comporte deux niveaux de couverture Jest : les **tests unitaires**, qui appellent directement les contrôleurs, middlewares et utilitaires avec des dépendances simulées, et les **tests d'intégration**, qui font tourner l'application Express réelle de bout en bout via HTTP avec `supertest`: vrais routeurs, vrais middlewares, vrais cookies/JWT, vrais limiteurs de débit, tout en ne simulant que les deux véritables dépendances externes (Postgres et le client OpenRouter).
+Le projet comporte deux niveaux de couverture Jest : les **tests unitaires**, qui appellent directement les contrôleurs, middlewares et utilitaires avec des dépendances simulées, et les **tests d'intégration**, qui font tourner l'application Express réelle de bout en bout via HTTP avec `supertest`: vrais routeurs, vrais middlewares, vrais cookies/JWT, vrais limiteurs de débit, et une **vraie base PostgreSQL**. Seul le client OpenRouter est simulé, de sorte que les tests n'appellent jamais l'API IA payante. Les tests unitaires continuent de simuler la connexion à la base pour s'exécuter rapidement sans Postgres.
 
 ### Tests unitaires (`tests/*.test.js`)
 
@@ -433,7 +436,30 @@ Le projet comporte deux niveaux de couverture Jest : les **tests unitaires**, qu
 | `authRateLimit.integration.test.js` | Limiteur anti force brute de l'authentification (20 tentatives / 15 min) |
 | `errorHandling.integration.test.js` | 404, JSON malformé, forme `{ error }` cohérente, routage statique |
 
-Exécuter la suite :
+### Configurer la base de test
+
+Les tests d'intégration utilisent le vrai `src/db/connection.js` de l'application avec une vraie base PostgreSQL. Utilisez une **base distincte de celle de développement** : `tests/integration/helpers/realDb.js` exécute `TRUNCATE` sur toutes les tables avant chaque test.
+
+1. **Créer la base de test**
+   ```sh
+   psql -U <votre_utilisateur> -c "CREATE DATABASE ai_language_learning_test"
+   ```
+2. **Y charger le schéma**
+   ```sh
+   psql -U <votre_utilisateur> -d ai_language_learning_test -f src/db/schema.sql
+   ```
+3. **Pointer les tests vers cette base.** Copiez le modèle et renseignez vos identifiants :
+   ```sh
+   cp .env.test.example .env.test
+   ```
+   ```
+   TEST_DATABASE_URL=postgres://<votre_utilisateur>:<votre_mot_de_passe>@localhost:5432/ai_language_learning_test
+   ```
+   `.env.test` est ignoré par git. Les caractères spéciaux du mot de passe doivent être encodés dans l'URL (`@` devient `%40`).
+
+`tests/setupEnv.js` s'exécute avant chaque fichier de test. Il charge `.env.test`, échoue immédiatement avec un message clair si un test d'intégration est lancé sans `TEST_DATABASE_URL`, et refuse de s'exécuter si `TEST_DATABASE_URL` est identique à `DATABASE_URL` dans `.env`, afin qu'une confusion ne puisse pas effacer vos données de développement. Les tests unitaires n'ont pas besoin de base de données. Une variable d'environnement `TEST_DATABASE_URL` déjà définie (comme en CI) prend le dessus sur `.env.test`.
+
+### Lancer les tests
 
 ```sh
 npm test              # tout, une fois
@@ -454,11 +480,15 @@ Ou utiliser les scripts pratiques dans [`automatic_tests/`](./automatic_tests) :
 
 Chaque push et chaque pull request passe par [GitHub Actions](.github/workflows/ci.yml) sur une matrice Node **22 / 24** :
 
+Chaque job démarre un conteneur PostgreSQL 16 temporaire comme service : la CI ne touche donc jamais une vraie base ni de vrais secrets. Les identifiants de test du workflow ne concernent que ce conteneur éphémère.
+
 | Étape | Description |
 |---|---|
+| **Démarrer PostgreSQL** | `services: postgres` (`postgres:16`), avec `TEST_DATABASE_URL` pointant vers ce service |
+| **Charger le schéma** | `psql "$TEST_DATABASE_URL" -f src/db/schema.sql` |
 | **Run unit tests** | `bash ./automatic_tests/run-unit-tests.sh` — la suite `tests/*.test.js` |
-| **Run integration tests** | `bash ./automatic_tests/run-integration-tests.sh`. La suite complète au niveau HTTP dans `tests/integration/` |
-| **Audit des dépendances** | Exécute `npm audit --audit-level=high` |
+| **Run integration tests** | `bash ./automatic_tests/run-integration-tests.sh`. La suite complète au niveau HTTP dans `tests/integration/`, exécutée sur le vrai service PostgreSQL |
+| **Audit des dépendances** | Exécute `npm audit --omit=dev --audit-level=high` (dépendances de production uniquement) |
 
 Les échecs de CI ne bloquent pas automatiquement le déploiement pour le moment. Les fusions nécessitent toujours de passer les vérifications si la protection des branches est activée sur le dépôt.
 

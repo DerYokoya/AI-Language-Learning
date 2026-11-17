@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Runs ONLY the integration tests in tests/integration/*.test.js — the ones
 # that drive the real Express app end-to-end via supertest (routes,
-# middleware, cookies/JWT, rate limiters, error handler), with just the
-# database and the AI client faked out.
+# middleware, cookies/JWT, rate limiters, error handler), against a real
+# PostgreSQL test database (TEST_DATABASE_URL), with only the AI client faked out.
 #
 # Usage:
 #   ./run-integration-tests.sh                          # run all integration tests

@@ -140,7 +140,7 @@ The application uses a centralized error handling pattern:
 | **Rate Limiting** | `express-rate-limit` |
 | **Dev tooling** | Nodemon, dotenv |
 | **Testing** | Jest |
-| **CI/CD** | GitHub Actions (matrix testing, schema validation, dependency audit) |
+| **CI/CD** | GitHub Actions (matrix testing against a real PostgreSQL service, dependency audit) |
 
 ---
 
@@ -278,6 +278,7 @@ ai-language-learning/
 │   ├── authMiddleware.test.js
 │   ├── hash.test.js
 │   ├── jwt.test.js
+│   ├── setupEnv.js                # Jest setup: loads .env.test, validates TEST_DATABASE_URL
 │   └── integration/               # End-to-end HTTP tests (supertest against the real app)
 │       ├── auth.integration.test.js
 │       ├── authorization.integration.test.js
@@ -290,7 +291,7 @@ ai-language-learning/
 │       ├── aiRateLimit.integration.test.js
 │       ├── errorHandling.integration.test.js
 │       └── helpers/
-│           ├── fakeDb.js          # In-memory stand-in for the Postgres connection
+│           ├── realDb.js          # Real Postgres helper: reset() / count() / rows() between tests
 │           └── fakeOpenrouter.js  # Fake AI client with controllable replies/failures
 ├── automatic_tests/           # Convenience scripts wrapping the Jest suite
 │   ├── run-all-tests.sh          # Unit + integration tests
@@ -301,7 +302,9 @@ ai-language-learning/
 ├── server.js                 # Express app entry point
 ├── package.json
 ├── .env.example               # Environment variable template
-└── .env                       # Environment variables (not committed)
+├── .env.test.example          # Test database variable template
+├── .env                       # Environment variables (not committed)
+└── .env.test                  # Test database URL (not committed)
 ```
 
 ---
@@ -399,13 +402,13 @@ This runs the database migration, rotates `JWT_SECRET`, and installs the npm dep
 
 ### Running Tests
 
-The project includes a full Jest test suite covering controllers, middleware, and utilities. See the [Testing](#testing) section for details and the full file breakdown.
+The project includes a full Jest test suite covering controllers, middleware, and utilities. The integration tests need a separate PostgreSQL test database; see the [Testing](#testing) section for setup, details, and the full file breakdown.
 
 ---
 
 ## Testing
 
-The project has two layers of Jest coverage: **unit tests**, which call controllers, middleware, and utilities directly with mocked dependencies, and **integration tests**, which drive the real Express app end-to-end over HTTP with `supertest` — real routers, real middleware, real cookies/JWTs, real rate limiters, faking out only the two genuine external dependencies (Postgres and the OpenRouter client).
+The project has two layers of Jest coverage: **unit tests**, which call controllers, middleware, and utilities directly with mocked dependencies, and **integration tests**, which drive the real Express app end-to-end over HTTP with `supertest` — real routers, real middleware, real cookies/JWTs, real rate limiters, and a **real PostgreSQL database**. Only the OpenRouter client is faked, so tests never call the paid AI API. The unit tests still mock the database connection so they run fast without Postgres.
 
 ### Unit tests (`tests/*.test.js`)
 
@@ -434,7 +437,30 @@ The project has two layers of Jest coverage: **unit tests**, which call controll
 | `authRateLimit.integration.test.js` | Auth brute-force limiter (20 attempts / 15 min) |
 | `errorHandling.integration.test.js` | 404s, malformed JSON, consistent `{ error }` shape, static routing |
 
-Run the suite:
+### Setting up the test database
+
+Integration tests use the app's real `src/db/connection.js` against a real PostgreSQL database. Use a **separate database from your development one**: `tests/integration/helpers/realDb.js` runs `TRUNCATE` on every table before each test.
+
+1. **Create the test database**
+   ```sh
+   psql -U <your_user> -c "CREATE DATABASE ai_language_learning_test"
+   ```
+2. **Load the schema into it**
+   ```sh
+   psql -U <your_user> -d ai_language_learning_test -f src/db/schema.sql
+   ```
+3. **Point the tests at it.** Copy the template and fill in your credentials:
+   ```sh
+   cp .env.test.example .env.test
+   ```
+   ```
+   TEST_DATABASE_URL=postgres://<your_user>:<your_password>@localhost:5432/ai_language_learning_test
+   ```
+   `.env.test` is git-ignored. Special characters in the password must be URL-encoded (`@` becomes `%40`).
+
+`tests/setupEnv.js` runs before every test file. It loads `.env.test`, fails immediately with a clear message if an integration test runs without `TEST_DATABASE_URL`, and refuses to run if `TEST_DATABASE_URL` is identical to the `DATABASE_URL` in `.env`, so a mix-up can't wipe your development data. Unit tests don't need a database. An already-set `TEST_DATABASE_URL` environment variable (as in CI) takes precedence over `.env.test`.
+
+### Running the tests
 
 ```sh
 npm test              # everything, once
@@ -455,11 +481,15 @@ Or use the convenience scripts in [`automatic_tests/`](./automatic_tests):
 
 Every push and pull request runs through [GitHub Actions](.github/workflows/ci.yml) across a Node **22 / 24** matrix:
 
+Each job starts a throwaway PostgreSQL 16 container as a service, so CI never touches a real database or real secrets. The test credentials in the workflow are for that temporary container only.
+
 | Step | What it does |
 |---|---|
+| **Start PostgreSQL** | `services: postgres` (`postgres:16`) with `TEST_DATABASE_URL` pointing at it |
+| **Load database schema** | `psql "$TEST_DATABASE_URL" -f src/db/schema.sql` |
 | **Run unit tests** | `bash ./automatic_tests/run-unit-tests.sh` — the `tests/*.test.js` suite |
-| **Run integration tests** | `bash ./automatic_tests/run-integration-tests.sh` — the full HTTP-level suite in `tests/integration/` |
-| **Audit dependencies** | Runs `npm audit --audit-level=high` |
+| **Run integration tests** | `bash ./automatic_tests/run-integration-tests.sh` — the full HTTP-level suite in `tests/integration/`, run against the real PostgreSQL service |
+| **Audit dependencies** | Runs `npm audit --omit=dev --audit-level=high` (production dependencies only) |
 
 CI failures don't currently block deployment automatically. Merges still require passing checks if branch protection is enabled on the repo.
 
